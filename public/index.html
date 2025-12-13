@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Космическая Аптека | Лекарства для межгалактических путешествий</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Шапка сайта -->
+    <header class="header">
+        <div class="container">
+            <nav class="navbar">
+                <div class="logo">
+                    <i class="fas fa-star-and-crescent"></i>
+                    <span>КОСМИЧЕСКАЯ АПТЕКА</span>
+                </div>
+                <ul class="nav-links">
+                    <li><a href="#home">Главная</a></li>
+                    <li><a href="#products">Продукты</a></li>
+                    <li><a href="#about">О нас</a></li>
+                    <li><a href="#cart">Корзина <span id="cart-count">0</span></a></li>
+                </ul>
+                <div class="auth-buttons">
+                    <button id="login-btn">Вход</button>
+                    <button id="register-btn">Регистрация</button>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Основное содержимое -->
+    <main class="main-content">
+        <section id="home" class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <h1>ФАРМАЦЕВТИКА БУДУЩЕГО УЖЕ ЗДЕСЬ</h1>
+                    <p>Лекарства для межгалактических путешествий, генной адаптации и лечения космических болезней</p>
+                    <button class="cta-button" id="explore-products">Исследовать продукты</button>
+                </div>
+                <div class="hero-image">
+                    <img src="https://images.unsplash.com/photo-1532094349884-543bc11b234d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80" alt="Космическая аптека">
+                </div>
+            </div>
+        </section>
+
+        <section id="products" class="products-section">
+            <div class="container">
+                <h2>НАШИ КОСМИЧЕСКИЕ ПРЕПАРАТЫ</h2>
+                <div class="filter-controls">
+                    <button class="filter-btn active" data-category="all">Все</button>
+                    <button class="filter-btn" data-category="immunity">Иммунитет</button>
+                    <button class="filter-btn" data-category="energy">Энергия</button>
+                    <button class="filter-btn" data-category="adaptation">Адаптация</button>
+                    <button class="filter-btn" data-category="recovery">Восстановление</button>
+                </div>
+                <div class="products-grid" id="products-container">
+                    <!-- Продукты будут загружены через JavaScript -->
+                </div>
+            </div>
+        </section>
+
+        <section id="cart" class="cart-section">
+            <div class="container">
+                <h2>ВАША КОРЗИНА МЕЖГАЛАКТИЧЕСКИХ ПОКУПОК</h2>
+                <div class="cart-container">
+                    <div class="cart-items" id="cart-items">
+                        <!-- Товары в корзине будут добавляться через JavaScript -->
+                        <p class="empty-cart">Ваша корзина пуста. Отправляйтесь за космическими покупками!</p>
+                    </div>
+                    <div class="cart-summary">
+                        <h3>Итого</h3>
+                        <div class="summary-details">
+                            <p>Товары: <span id="subtotal">0</span> ₽</p>
+                            <p>Доставка: <span id="shipping">500</span> ₽</p>
+                            <p class="total">Всего: <span id="total">500</span> ₽</p>
+                        </div>
+                        <button class="checkout-btn" id="checkout-btn">Оформить заказ</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="about" class="about-section">
+            <div class="container">
+                <h2>КОСМИЧЕСКАЯ АПТЕКА - ЛИДЕР МЕЖГАЛАКТИЧЕСКОЙ ФАРМАЦЕВТИКИ</h2>
+                <div class="about-content">
+                    <div class="about-text">
+                        <p>Мы - первая в истории аптека, специализирующаяся на лекарствах для космических путешественников, колонизаторов других планет и исследователей далёких галактик.</p>
+                        <p>Наши препараты прошли клинические испытания в условиях невесомости, повышенной радиации и экстремальных температур.</p>
+                        <div class="features">
+                            <div class="feature">
+                                <i class="fas fa-rocket"></i>
+                                <h4>Быстрая доставка</h4>
+                                <p>Доставляем заказы в любую точку Солнечной системы за 24 земных часа</p>
+                            </div>
+                            <div class="feature">
+                                <i class="fas fa-shield-alt"></i>
+                                <h4>Гарантия качества</h4>
+                                <p>Все препараты сертифицированы Межгалактическим медицинским советом</p>
+                            </div>
+                            <div class="feature">
+                                <i class="fas fa-user-astronaut"></i>
+                                <h4>Экспертные консультации</h4>
+                                <p>Наши фармацевты - бывшие космонавты с медицинским образованием</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="about-image">
+                        <img src="https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80" alt="Космическая лаборатория">
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Модальные окна -->
+    <div id="login-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Вход в систему</h2>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="login-email">Электронная почта</label>
+                    <input type="email" id="login-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Пароль</label>
+                    <input type="password" id="login-password" required>
+                </div>
+                <button type="submit" class="submit-btn">Войти</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="register-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Регистрация</h2>
+            <form id="register-form">
+                <div class="form-group">
+                    <label for="register-name">Имя</label>
+                    <input type="text" id="register-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-email">Электронная почта</label>
+                    <input type="email" id="register-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Пароль</label>
+                    <input type="password" id="register-password" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-address">Адрес доставки (планета, станция)</label>
+                    <input type="text" id="register-address" required>
+                </div>
+                <button type="submit" class="submit-btn">Зарегистрироваться</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="order-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Оформление заказа</h2>
+            <form id="order-form">
+                <div class="form-group">
+                    <label for="order-name">ФИО</label>
+                    <input type="text" id="order-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="order-email">Электронная почта</label>
+                    <input type="email" id="order-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="order-address">Адрес доставки</label>
+                    <input type="text" id="order-address" placeholder="Планета, станция, сектор" required>
+                </div>
+                <div class="form-group">
+                    <label for="order-comments">Комментарий к заказу</label>
+                    <textarea id="order-comments" rows="3"></textarea>
+                </div>
+                <div class="order-summary">
+                    <h3>Детали заказа</h3>
+                    <div id="order-details">
+                        <!-- Детали заказа будут вставлены через JavaScript -->
+                    </div>
+                    <p class="total">Итого к оплате: <span id="order-total">0</span> ₽</p>
+                </div>
+                <button type="submit" class="submit-btn">Подтвердить заказ</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+    <!-- Подвал сайта -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>КОСМИЧЕСКАЯ АПТЕКА</h3>
+                    <p>Фармацевтика будущего уже здесь</p>
+                    <div class="social-icons">
+                        <a href="#"><i class="fab fa-telegram"></i></a>
+                        <a href="#"><i class="fab fa-vk"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h3>Контакты</h3>
+                    <p><i class="fas fa-map-marker-alt"></i> Орбитальная станция "Мир-2", Сектор 5</p>
+                    <p><i class="fas fa-phone"></i> +7 (900) 123-45-67 (межпланетная связь)</p>
+                    <p><i class="fas fa-envelope"></i> info@cosmic-pharmacy.space</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Часы работы</h3>
+                    <p>Круглосуточно 7 дней в неделю</p>
+                    <p>По земному времени (UTC+3)</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Космическая Аптека. Все права защищены Межгалактической конвенцией.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
