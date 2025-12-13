@@ -383,14 +383,13 @@ async function handleOrder(e) {
     
     try {
         // Отправка заказа на сервер
-        const response = await fetch('http://localhost:3000/api/orders', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(orderData)
-        });
-        
+const response = await fetch('/api/orders', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify(orderData)
+});
         if (response.ok) {
             const result = await response.json();
             showNotification(`Заказ №${result.orderId} успешно оформлен!`, 'success');
