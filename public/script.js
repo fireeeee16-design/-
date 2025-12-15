@@ -8,7 +8,7 @@ const products = [
         category: "energy",
         price: 2500,
         description: "Повышает энергетический уровень в условиях невесомости",
-        image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1130&q=80"
+        image: "imeges/Антигравитацин.png"
     },
     {
         id: 2,
@@ -16,7 +16,7 @@ const products = [
         category: "immunity",
         price: 3200,
         description: "Защищает от космической радиации, повышает иммунитет",
-        image: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80"
+        image: "imeges/Радиозащитный гель.png"
     },
     {
         id: 3,
@@ -24,7 +24,7 @@ const products = [
         category: "adaptation",
         price: 8500,
         description: "Подготовка организма к жизни в условиях Марса",
-        image: "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80"
+        image: "imeges/Генная адаптация Марс.png"
     },
     {
         id: 4,
@@ -32,7 +32,7 @@ const products = [
         category: "recovery",
         price: 5400,
         description: "Предотвращает потерю костной массы в космосе",
-        image: "https://images.unsplash.com/photo-1582719508461-905c673771fd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1025&q=80"
+        image: "imeges/Костный регенератор.png"
     },
     {
         id: 5,
@@ -40,7 +40,7 @@ const products = [
         category: "energy",
         price: 4100,
         description: "Улучшает когнитивные функции в длительных полетах",
-        image: "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80"
+        image: "imeges/Нейростабилизатор.png"
     },
     {
         id: 6,
@@ -48,7 +48,7 @@ const products = [
         category: "immunity",
         price: 6900,
         description: "Адаптирует иммунную систему к атмосфере Венеры",
-        image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1130&q=80"
+        image: "imeges/Иммуномодулятор Венера.jpg"
     },
     {
         id: 7,
@@ -56,7 +56,7 @@ const products = [
         category: "recovery",
         price: 7800,
         description: "Ускоряет восстановление после криогенного сна",
-        image: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80"
+        image: "imeges/Крио-восстановитель.jpg"
     },
     {
         id: 8,
@@ -64,13 +64,15 @@ const products = [
         category: "adaptation",
         price: 9200,
         description: "Подготовка к прыжкам в гиперпространстве",
-        image: "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80"
+        image: "imeges/Гиперпространственный адаптоген.jpg"
     }
 ];
 
 // Глобальные переменные
 let cart = JSON.parse(localStorage.getItem('cart')) || [];
 let currentFilter = 'all';
+let currentUser = JSON.parse(localStorage.getItem('cosmicUser')) || null;
+let authToken = localStorage.getItem('cosmicToken') || null;
 
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
@@ -82,6 +84,14 @@ function initApp() {
     renderProducts();
     updateCartCount();
     setupEventListeners();
+    loadSession();
+}
+
+// Загрузка сессии пользователя
+function loadSession() {
+    if (currentUser && authToken) {
+        updateUIForUser();
+    }
 }
 
 // Установка обработчиков событий
@@ -124,9 +134,49 @@ function setupEventListeners() {
     document.getElementById('login-form').addEventListener('submit', handleLogin);
     document.getElementById('register-form').addEventListener('submit', handleRegister);
     document.getElementById('order-form').addEventListener('submit', handleOrder);
+    
+    // Добавляем новые обработчики для профиля
+    setupUserEventListeners();
 }
 
-// Отображение продуктов
+function setupUserEventListeners() {
+    // Кнопка выхода
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', logoutUser);
+    }
+    
+    // Кнопка профиля
+    const profileBtn = document.getElementById('profile-btn');
+    if (profileBtn) {
+        profileBtn.addEventListener('click', showProfile);
+    }
+    
+    // Кнопка истории заказов
+    const historyBtn = document.getElementById('history-btn');
+    if (historyBtn) {
+        historyBtn.addEventListener('click', showOrderHistory);
+    }
+    
+    // Кнопка пополнения баланса
+    const topupBtn = document.getElementById('topup-btn');
+    if (topupBtn) {
+        topupBtn.addEventListener('click', showTopUpForm);
+    }
+    
+    // Админ-кнопки
+    const adminPanelBtn = document.getElementById('admin-panel-btn');
+    if (adminPanelBtn) {
+        adminPanelBtn.addEventListener('click', showAdminPanel);
+    }
+    
+    const manageProductsBtn = document.getElementById('manage-products-btn');
+    if (manageProductsBtn) {
+        manageProductsBtn.addEventListener('click', showProductManager);
+    }
+}
+
+// Отображение продуктов (остается без изменений)
 function renderProducts() {
     const container = document.getElementById('products-container');
     container.innerHTML = '';
@@ -313,6 +363,12 @@ function openOrderModal() {
         return;
     }
     
+    if (!currentUser) {
+        showNotification('Для оформления заказа необходимо войти в систему', 'error');
+        openModal('login-modal');
+        return;
+    }
+    
     const orderDetails = document.getElementById('order-details');
     orderDetails.innerHTML = '';
     
@@ -334,43 +390,170 @@ function openOrderModal() {
 }
 
 // Обработка входа
-function handleLogin(e) {
+async function handleLogin(e) {
     e.preventDefault();
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
     
-    // В реальном приложении здесь был бы запрос к серверу
-    showNotification(`Вход выполнен для ${email}`, 'success');
-    document.getElementById('login-modal').style.display = 'none';
-    e.target.reset();
+    try {
+        const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            saveUserSession(result.user, result.token);
+            showNotification(`Вход выполнен для ${result.user.name}`, 'success');
+            document.getElementById('login-modal').style.display = 'none';
+            e.target.reset();
+        } else {
+            throw new Error('Неверный email или пароль');
+        }
+    } catch (error) {
+        console.error('Ошибка:', error);
+        showNotification('Ошибка при входе. Проверьте данные.', 'error');
+    }
 }
 
 // Обработка регистрации
-function handleRegister(e) {
+async function handleRegister(e) {
     e.preventDefault();
     const name = document.getElementById('register-name').value;
     const email = document.getElementById('register-email').value;
     const password = document.getElementById('register-password').value;
     const address = document.getElementById('register-address').value;
     
-    // В реальном приложении здесь был бы запрос к серверу
-    showNotification(`Регистрация успешна для ${name}`, 'success');
-    document.getElementById('register-modal').style.display = 'none';
-    e.target.reset();
+    try {
+        const response = await fetch('/api/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password, name, address })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            saveUserSession(result.user, result.token);
+            showNotification(`Регистрация успешна для ${name}`, 'success');
+            document.getElementById('register-modal').style.display = 'none';
+            e.target.reset();
+        } else {
+            throw new Error('Ошибка регистрации');
+        }
+    } catch (error) {
+        console.error('Ошибка:', error);
+        showNotification('Ошибка при регистрации. Возможно email уже используется.', 'error');
+    }
+}
+
+// Сохранение сессии пользователя
+function saveUserSession(user, token) {
+    currentUser = user;
+    authToken = token;
+    localStorage.setItem('cosmicUser', JSON.stringify(user));
+    localStorage.setItem('cosmicToken', token);
+    updateUIForUser();
+}
+
+// Обновление интерфейса для пользователя
+function updateUIForUser() {
+    document.getElementById('guest-buttons').style.display = 'none';
+    document.getElementById('user-menu').style.display = 'flex';
+    document.getElementById('user-name').textContent = currentUser.name.split(' ')[0];
+    document.getElementById('user-balance').textContent = `${currentUser.balance || 0} ₽`;
+    
+    // Показываем админ-кнопки если пользователь админ
+    if (currentUser.role === 'admin') {
+        document.getElementById('admin-buttons').style.display = 'flex';
+    }
+}
+
+// Выход пользователя
+function logoutUser() {
+    currentUser = null;
+    authToken = null;
+    localStorage.removeItem('cosmicUser');
+    localStorage.removeItem('cosmicToken');
+    
+    document.getElementById('guest-buttons').style.display = 'flex';
+    document.getElementById('user-menu').style.display = 'none';
+    document.getElementById('admin-buttons').style.display = 'none';
+    
+    showNotification('Вы вышли из системы', 'info');
+}
+
+// Показать профиль
+function showProfile() {
+    openModal('profile-modal');
+    document.getElementById('profile-name').textContent = currentUser.name;
+    document.getElementById('profile-email').textContent = currentUser.email;
+    document.getElementById('profile-address').textContent = currentUser.address || 'Не указан';
+    document.getElementById('profile-balance').textContent = `${currentUser.balance || 0} ₽`;
+    document.getElementById('profile-role').textContent = currentUser.role === 'admin' ? 'Администратор' : 'Пользователь';
+}
+
+// Показать историю заказов
+async function showOrderHistory() {
+    try {
+        const response = await fetch('/api/user/orders', {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        
+        if (response.ok) {
+            const orders = await response.json();
+            // Отображение истории заказов в модальном окне
+            openModal('history-modal');
+            const historyContainer = document.getElementById('history-list');
+            historyContainer.innerHTML = '';
+            
+            if (orders.length === 0) {
+                historyContainer.innerHTML = '<p>У вас пока нет заказов</p>';
+                return;
+            }
+            
+            orders.forEach(order => {
+                const orderElement = document.createElement('div');
+                orderElement.className = 'history-item';
+                orderElement.innerHTML = `
+                    <h4>Заказ #${order.id} от ${new Date(order.created_at).toLocaleDateString()}</h4>
+                    <p>Сумма: ${order.total} ₽</p>
+                    <p>Статус: ${order.status}</p>
+                `;
+                historyContainer.appendChild(orderElement);
+            });
+        }
+    } catch (error) {
+        showNotification('Ошибка при загрузке истории заказов', 'error');
+    }
 }
 
 // Обработка заказа
 async function handleOrder(e) {
     e.preventDefault();
     
-    const name = document.getElementById('order-name').value;
-    const email = document.getElementById('order-email').value;
-    const address = document.getElementById('order-address').value;
+    if (!currentUser) {
+        showNotification('Для оформления заказа необходимо войти в систему', 'error');
+        return;
+    }
+    
     const comments = document.getElementById('order-comments').value;
     
     // Подготовка данных заказа
     const orderData = {
-        customer: { name, email, address, comments },
+        customer: { 
+            id: currentUser.id,
+            name: currentUser.name, 
+            email: currentUser.email, 
+            address: currentUser.address, 
+            comments 
+        },
         items: cart.map(item => ({
             id: item.id,
             name: item.name,
@@ -378,21 +561,29 @@ async function handleOrder(e) {
             quantity: item.quantity
         })),
         total: document.getElementById('order-total').textContent,
-        date: new Date().toISOString()
+        userId: currentUser.id
     };
     
     try {
-        // Отправка заказа на сервер
-const response = await fetch('/api/orders', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify(orderData)
-});
+        const response = await fetch('/api/orders', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(orderData)
+        });
+        
         if (response.ok) {
             const result = await response.json();
             showNotification(`Заказ №${result.orderId} успешно оформлен!`, 'success');
+            
+            // Обновляем баланс пользователя
+            if (result.newBalance !== undefined) {
+                currentUser.balance = result.newBalance;
+                localStorage.setItem('cosmicUser', JSON.stringify(currentUser));
+                updateUIForUser();
+            }
             
             // Очистка корзины
             cart = [];
@@ -421,3 +612,291 @@ function showNotification(message, type = 'info') {
         notification.style.display = 'none';
     }, 3000);
 }
+
+// Админ-функции
+async function showAdminPanel() {
+    try {
+        const response = await fetch('/api/admin/stats', {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        
+        if (response.ok) {
+            const stats = await response.json();
+            openModal('admin-modal');
+            
+            document.getElementById('total-users').textContent = stats.users;
+            document.getElementById('total-orders').textContent = stats.orders;
+            document.getElementById('total-revenue').textContent = `${stats.revenue || 0} ₽`;
+        }
+    } catch (error) {
+        showNotification('Ошибка при загрузке статистики', 'error');
+    }
+}
+
+function showTopUpForm() {
+    openModal('topup-modal');
+}
+
+async function showProductManager() {
+    // Реализация управления товарами
+    openModal('products-modal');
+}
+// Инициализация таблиц базы данных
+function initializeDatabase() {
+  // Таблица товаров
+  db.run(`
+    CREATE TABLE IF NOT EXISTS products (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      category TEXT NOT NULL,
+      price REAL NOT NULL,
+      description TEXT,
+      image_url TEXT
+    )
+  `);
+  
+  // Таблица пользователей
+  db.run(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      name TEXT NOT NULL,
+      address TEXT,
+      role TEXT DEFAULT 'user',
+      balance REAL DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  
+  // Таблица заказов
+  db.run(`
+    CREATE TABLE IF NOT EXISTS orders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      customer_name TEXT NOT NULL,
+      customer_email TEXT NOT NULL,
+      customer_address TEXT NOT NULL,
+      total REAL NOT NULL,
+      status TEXT DEFAULT 'new',
+      comments TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id)
+    )
+  `);
+  
+  // Таблица товаров в заказах
+  db.run(`
+    CREATE TABLE IF NOT EXISTS order_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id INTEGER NOT NULL,
+      product_id INTEGER NOT NULL,
+      product_name TEXT NOT NULL,
+      quantity INTEGER NOT NULL,
+      price REAL NOT NULL,
+      FOREIGN KEY (order_id) REFERENCES orders (id)
+    )
+  `);
+  
+  console.log('Таблицы базы данных готовы');
+  
+  // Создаём администратора по умолчанию
+  db.get('SELECT COUNT(*) as count FROM users WHERE role = "admin"', (err, row) => {
+    if (row && row.count === 0) {
+      db.run(
+        'INSERT INTO users (email, password, name, role, balance) VALUES (?, ?, ?, ?, ?)',
+        ['admin@cosmic.pharmacy', 'admin123', 'Главный Администратор', 'admin', 100000],
+        (err) => {
+          if (!err) console.log('✅ Создан администратор по умолчанию');
+        }
+      );
+    }
+  });
+}
+// Регистрация пользователя
+app.post('/api/register', (req, res) => {
+  const { email, password, name, address } = req.body;
+  
+  if (!email || !password || !name) {
+    return res.status(400).json({ error: 'Заполните обязательные поля' });
+  }
+  
+  // Проверяем, есть ли уже такой email
+  db.get('SELECT id FROM users WHERE email = ?', [email], (err, row) => {
+    if (err) {
+      console.error('Ошибка БД:', err.message);
+      return res.status(500).json({ error: 'Ошибка сервера' });
+    }
+    
+    if (row) {
+      return res.status(400).json({ error: 'Email уже используется' });
+    }
+    
+    // Создаём нового пользователя (пароль хранится в открытом виде - упрощённо)
+    db.run(
+      'INSERT INTO users (email, password, name, address) VALUES (?, ?, ?, ?)',
+      [email, password, name, address || ''],
+      function(err) {
+        if (err) {
+          console.error('Ошибка создания пользователя:', err.message);
+          return res.status(500).json({ error: 'Ошибка сервера' });
+        }
+        
+        const newUser = {
+          id: this.lastID,
+          email: email,
+          name: name,
+          address: address || '',
+          role: 'user',
+          balance: 0
+        };
+        
+        res.json({
+          success: true,
+          user: newUser,
+          token: `user-${this.lastID}-${Date.now()}`
+        });
+      }
+    );
+  });
+});
+
+// Вход пользователя
+app.post('/api/login', (req, res) => {
+  const { email, password } = req.body;
+  
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Заполните email и пароль' });
+  }
+  
+  db.get(
+    'SELECT id, email, password, name, address, role, balance FROM users WHERE email = ?',
+    [email],
+    (err, user) => {
+      if (err) {
+        console.error('Ошибка БД:', err.message);
+        return res.status(500).json({ error: 'Ошибка сервера' });
+      }
+      
+      if (!user) {
+        return res.status(401).json({ error: 'Пользователь не найден' });
+      }
+      
+      // Простая проверка пароля (в реальном проекте используйте хеширование!)
+      if (user.password !== password) {
+        return res.status(401).json({ error: 'Неверный пароль' });
+      }
+      
+      // Убираем пароль из ответа
+      delete user.password;
+      
+      res.json({
+        success: true,
+        user: user,
+        token: `user-${user.id}-${Date.now()}`
+      });
+    }
+  );
+});
+// Оформление заказа (с проверкой пользователя)
+app.post('/api/orders', (req, res) => {
+  const { customer, items, total, userId } = req.body;
+  
+  if (!customer || !items || items.length === 0) {
+    return res.status(400).json({ error: 'Неполные данные заказа' });
+  }
+  
+  // Сохраняем заказ с привязкой к пользователю
+  db.run(
+    `INSERT INTO orders (user_id, customer_name, customer_email, customer_address, total, comments) 
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [userId || null, customer.name, customer.email, customer.address, total, customer.comments || ''],
+    function(err) {
+      if (err) {
+        console.error('Ошибка при сохранении заказа:', err.message);
+        return res.status(500).json({ error: 'Ошибка сервера' });
+      }
+      
+      const orderId = this.lastID;
+      const stmt = db.prepare(
+        'INSERT INTO order_items (order_id, product_id, product_name, quantity, price) VALUES (?, ?, ?, ?, ?)'
+      );
+      
+      items.forEach(item => {
+        stmt.run(orderId, item.id, item.name, item.quantity, item.price);
+      });
+      
+      stmt.finalize();
+      
+      // Если есть userId, вычитаем сумму из баланса
+      if (userId) {
+        db.run(
+          'UPDATE users SET balance = balance - ? WHERE id = ?',
+          [total, userId],
+          (err) => {
+            if (err) console.error('Ошибка обновления баланса:', err.message);
+            
+            // Получаем обновлённый баланс
+            db.get('SELECT balance FROM users WHERE id = ?', [userId], (err, row) => {
+              res.json({
+                success: true,
+                message: 'Заказ успешно оформлен!',
+                orderId: orderId,
+                orderNumber: `COSMIC-${orderId}`,
+                newBalance: row ? row.balance : 0
+              });
+            });
+          }
+        );
+      } else {
+        res.json({
+          success: true,
+          message: 'Заказ успешно оформлен!',
+          orderId: orderId,
+          orderNumber: `COSMIC-${orderId}`
+        });
+      }
+    }
+  );
+});
+// История заказов пользователя
+app.get('/api/user/orders', (req, res) => {
+  // В реальном проекте здесь должна быть проверка токена
+  const userId = req.query.userId;
+  
+  if (!userId) {
+    return res.status(400).json({ error: 'Не указан ID пользователя' });
+  }
+  
+  db.all(
+    `SELECT o.*, 
+            GROUP_CONCAT(oi.product_name || ' (x' || oi.quantity || ')') as products
+     FROM orders o
+     LEFT JOIN order_items oi ON o.id = oi.order_id
+     WHERE o.user_id = ?
+     GROUP BY o.id
+     ORDER BY o.created_at DESC`,
+    [userId],
+    (err, rows) => {
+      if (err) {
+        console.error('Ошибка при получении заказов:', err.message);
+        return res.status(500).json({ error: 'Ошибка сервера' });
+      }
+      res.json(rows);
+    }
+  );
+});
+// Создаём администратора по умолчанию
+db.get('SELECT COUNT(*) as count FROM users WHERE role = "admin"', (err, row) => {
+  if (row.count === 0) {
+    db.run(
+      'INSERT INTO users (email, password, name, role, balance) VALUES (?, ?, ?, ?, ?)',
+      ['admin@cosmic.pharmacy', 'admin123', 'Главный Администратор', 'admin', 100000],
+      (err) => {
+        if (!err) console.log('Создан администратор по умолчанию');
+      }
+    );
+  }
+});

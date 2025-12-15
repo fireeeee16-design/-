@@ -23,10 +23,28 @@
                     <li><a href="#about">О нас</a></li>
                     <li><a href="#cart">Корзина <span id="cart-count">0</span></a></li>
                 </ul>
-                <div class="auth-buttons">
-                    <button id="login-btn">Вход</button>
-                    <button id="register-btn">Регистрация</button>
-                </div>
+                <<div class="auth-buttons">
+    <!-- До входа -->
+    <div id="guest-buttons">
+        <button id="login-btn">Вход</button>
+        <button id="register-btn">Регистрация</button>
+    </div>
+    
+    <!-- После входа -->
+    <div id="user-menu" style="display: none;">
+        <button id="profile-btn" class="profile-icon">
+            <i class="fas fa-user-astronaut"></i>
+            <span id="user-name"></span>
+        </button>
+        <span class="user-balance" id="user-balance">0 ₽</span>
+        <button id="logout-btn" class="logout-btn">Выйти</button>
+        
+        <div id="admin-buttons" style="display: none;">
+            <button id="admin-panel-btn">Админ</button>
+            <button id="manage-products-btn">Товары</button>
+        </div>
+    </div>
+</div>
             </nav>
         </div>
     </header>
@@ -41,7 +59,7 @@
                     <button class="cta-button" id="explore-products">Исследовать продукты</button>
                 </div>
                 <div class="hero-image">
-                    <img src="https://images.unsplash.com/photo-1532094349884-543bc11b234d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80" alt="Космическая аптека">
+                    <img src="imeges/Главное.jpg" alt="Космическая аптека">
                 </div>
             </div>
         </section>
@@ -56,9 +74,7 @@
                     <button class="filter-btn" data-category="adaptation">Адаптация</button>
                     <button class="filter-btn" data-category="recovery">Восстановление</button>
                 </div>
-                <div class="products-grid" id="products-container">
-                    <!-- Продукты будут загружены через JavaScript -->
-                </div>
+                <div class="products-grid" id="products-container"></div>
             </div>
         </section>
 
@@ -67,7 +83,7 @@
                 <h2>ВАША КОРЗИНА МЕЖГАЛАКТИЧЕСКИХ ПОКУПОК</h2>
                 <div class="cart-container">
                     <div class="cart-items" id="cart-items">
-                        <!-- Товары в корзине будут добавляться через JavaScript -->
+                        <!-- Товары в корзине  -->
                         <p class="empty-cart">Ваша корзина пуста. Отправляйтесь за космическими покупками!</p>
                     </div>
                     <div class="cart-summary">
@@ -109,7 +125,7 @@
                         </div>
                     </div>
                     <div class="about-image">
-                        <img src="https://images.unsplash.com/photo-1532601224476-15c79f2f7a51?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80" alt="Космическая лаборатория">
+                        <img src="imeges/О нас.png" alt="Космическая лаборатория">
                     </div>
                 </div>
             </div>
@@ -185,7 +201,7 @@
                 <div class="order-summary">
                     <h3>Детали заказа</h3>
                     <div id="order-details">
-                        <!-- Детали заказа будут вставлены через JavaScript -->
+                        <!-- Детали заказа  -->
                     </div>
                     <p class="total">Итого к оплате: <span id="order-total">0</span> ₽</p>
                 </div>
@@ -196,7 +212,7 @@
 
     <div id="notification" class="notification"></div>
 
-    <!-- Подвал сайта -->
+    <!-- Подвал -->
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
@@ -227,7 +243,79 @@
             </div>
         </div>
     </footer>
+<!-- После существующих модальных окон добавьте: -->
 
+<!-- Модальное окно профиля -->
+<div id="profile-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2>Мой профиль</h2>
+        <div class="profile-info">
+            <p><strong>ФИО:</strong> <span id="profile-name"></span></p>
+            <p><strong>Email:</strong> <span id="profile-email"></span></p>
+            <p><strong>Адрес:</strong> <span id="profile-address"></span></p>
+            <p><strong>Баланс:</strong> <span id="profile-balance"></span></p>
+            <p><strong>Статус:</strong> <span id="profile-role"></span></p>
+        </div>
+        <button class="cta-button" id="edit-profile-btn">Редактировать профиль</button>
+    </div>
+</div>
+
+<!-- Модальное окно истории заказов -->
+<div id="history-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2>История заказов</h2>
+        <div id="history-list"></div>
+    </div>
+</div>
+
+<!-- Модальное окно админ-панели -->
+<div id="admin-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2>Админ-панель</h2>
+        <div class="admin-stats">
+            <div class="stat-card">
+                <h3>Пользователи</h3>
+                <p id="total-users">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Заказы</h3>
+                <p id="total-orders">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Выручка</h3>
+                <p id="total-revenue">0 ₽</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Обновите шапку для пользовательского меню -->
+<div class="auth-buttons">
+    <!-- До входа -->
+    <div id="guest-buttons">
+        <button id="login-btn">Вход</button>
+        <button id="register-btn">Регистрация</button>
+    </div>
+    
+    <!-- После входа -->
+    <div id="user-menu" style="display: none;">
+        <button id="profile-btn" class="profile-icon">
+            <i class="fas fa-user-astronaut"></i>
+            <span id="user-name"></span>
+        </button>
+        <span class="user-balance" id="user-balance">0 ₽</span>
+        <button id="logout-btn" class="logout-btn">Выйти</button>
+        
+        <div id="admin-buttons" style="display: none;">
+            <button id="admin-panel-btn">Админ</button>
+            <button id="manage-products-btn">Товары</button>
+        </div>
+    </div>
+</div>
     <script src="script.js"></script>
+    
 </body>
 </html>
