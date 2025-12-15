@@ -396,7 +396,7 @@ async function handleLogin(e) {
     const password = document.getElementById('login-password').value;
     
     try {
-        const response = await fetch('/api/login', {
+        const response = await fetch('https://cosmic-pharmacy.onrender.com/api/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -428,7 +428,7 @@ async function handleRegister(e) {
     const address = document.getElementById('register-address').value;
     
     try {
-        const response = await fetch('/api/register', {
+        const response = await fetch('https://cosmic-pharmacy.onrender.com/api/register', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
