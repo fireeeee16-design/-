@@ -296,7 +296,36 @@ app.get('/api/test', (req, res) => {
     ]
   });
 });
-
+// Добавьте этот маршрут ПЕРЕД app.listen() в server.js
+app.get('/api/debug/tables', (req, res) => {
+  db.all(
+    "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name",
+    [],
+    (err, tables) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      
+      // Получаем структуру каждой таблицы
+      const tableInfo = [];
+      let processed = 0;
+      
+      tables.forEach(table => {
+        db.all(`PRAGMA table_info(${table.name})`, [], (err, columns) => {
+          tableInfo.push({
+            table: table.name,
+            columns: columns
+          });
+          
+          processed++;
+          if (processed === tables.length) {
+            res.json(tableInfo);
+          }
+        });
+      });
+    }
+  );
+});
 // Запуск сервера
 app.listen(PORT, () => {
   console.log(`=======================================`);
