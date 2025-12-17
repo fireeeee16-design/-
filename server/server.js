@@ -1,4 +1,4 @@
-// Космическая аптека - полный сервер
+// Космическая аптека - полный сервер (ИСПРАВЛЕННАЯ ВЕРСИЯ)
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
@@ -13,19 +13,20 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
-// База данных
+// База данных (ОДИН РАЗ!)
 const db = new sqlite3.Database('./database.sqlite', (err) => {
   if (err) {
     console.error('Ошибка подключения к БД:', err.message);
   } else {
     console.log('✅ База данных SQLite подключена');
     initializeDatabase();
+    addMissingColumns();
   }
 });
 
 // ==================== ИНИЦИАЛИЗАЦИЯ БАЗЫ ДАННЫХ ====================
 function initializeDatabase() {
-  // 1. Таблица пользователей (СНАЧАЛА!)
+  // 1. Таблица пользователей
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -40,20 +41,20 @@ function initializeDatabase() {
   `, () => {
     console.log('✅ Таблица users готова');
     
-    // Создаём администратора по умолчанию
+    // Администратор
     db.get('SELECT COUNT(*) as count FROM users WHERE email = "admin@cosmic.pharmacy"', (err, row) => {
       if (row && row.count === 0) {
         db.run(
-    'INSERT INTO users (email, password, name, address, role, balance) VALUES (?, ?, ?, ?, ?, ?)',
-    ['admin@cosmic.pharmacy', 'admin123', 'Главный Администратор', 'Орбитальная станция "Мир-2", Сектор 5', 'admin', 100000],
-    (err) => {
-        if (!err) console.log('✅ Создан администратор с адресом');
-    }
-);
+          'INSERT INTO users (email, password, name, address, role, balance) VALUES (?, ?, ?, ?, ?, ?)',
+          ['admin@cosmic.pharmacy', 'admin123', 'Главный Администратор', 'Орбитальная станция "Мир-2", Сектор 5', 'admin', 100000],
+          (err) => {
+            if (!err) console.log('✅ Создан администратор с адресом');
+          }
+        );
       }
     });
     
-    // Создаём тестового пользователя
+    // Тестовый пользователь
     db.get('SELECT COUNT(*) as count FROM users WHERE email = "test@test.com"', (err, row) => {
       if (row && row.count === 0) {
         db.run(
@@ -92,8 +93,7 @@ function initializeDatabase() {
       total REAL NOT NULL,
       status TEXT DEFAULT 'new',
       comments TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users (id)
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `, () => {
     console.log('✅ Таблица orders готова');
@@ -107,8 +107,7 @@ function initializeDatabase() {
       product_id INTEGER NOT NULL,
       product_name TEXT NOT NULL,
       quantity INTEGER NOT NULL,
-      price REAL NOT NULL,
-      FOREIGN KEY (order_id) REFERENCES orders (id)
+      price REAL NOT NULL
     )
   `, () => {
     console.log('✅ Таблица order_items готова');
@@ -120,7 +119,6 @@ function initializeDatabase() {
 function addMissingColumns() {
   console.log('🔍 Проверяем структуру таблиц...');
   
-  // Проверяем и добавляем user_id если нет
   db.all("PRAGMA table_info(orders)", [], (err, columns) => {
     if (err) {
       console.error('❌ Ошибка проверки таблицы orders:', err.message);
@@ -144,16 +142,8 @@ function addMissingColumns() {
   });
 }
 
-// Вызовите её в обработчике подключения к БД:
-const db = new sqlite3.Database('./database.sqlite', (err) => {
-  if (err) {
-    console.error('Ошибка подключения к БД:', err.message);
-  } else {
-    console.log('✅ База данных SQLite подключена');
-    initializeDatabase();
-    addMissingColumns(); // ← ДОБАВЬТЕ ЭТУ СТРОЧКУ
-  }
-});
+// ==================== API ДЛЯ РЕГИСТРАЦИИ И ВХОДА ====================
+
 // Регистрация
 app.post('/api/register', (req, res) => {
   const { email, password, name, address } = req.body;
@@ -221,14 +211,12 @@ app.post('/api/login', (req, res) => {
         return res.status(401).json({ error: 'Пользователь не найден' });
       }
       
-      // Проверяем пароль
       if (user.password !== password) {
         return res.status(401).json({ error: 'Неверный пароль' });
       }
       
       console.log('✅ Успешный вход:', email);
       
-      // Убираем пароль из ответа
       const { password: _, ...userWithoutPassword } = user;
       
       res.json({
@@ -239,149 +227,69 @@ app.post('/api/login', (req, res) => {
   );
 });
 
-// ==================== ДОПОЛНИТЕЛЬНЫЕ API ====================
+// ==================== ОБРАБОТКА ЗАКАЗОВ ====================
+
+// УПРОЩЁННЫЙ обработчик заказов
 app.post('/api/orders', (req, res) => {
-  console.log('📦 Получен запрос на заказ в:', new Date().toISOString());
-  
-  // Логируем данные запроса
-  console.log('📋 Тело запроса:', JSON.stringify(req.body, null, 2));
+  console.log('📦 Получен заказ от:', req.body.customer?.name);
   
   const { customer, items, total, userId } = req.body;
   
-  // Проверка данных
   if (!customer || !customer.name || !customer.email || !customer.address) {
-    console.error('❌ Нет данных customer');
-    return res.status(400).json({
-      success: false,
-      error: 'Отсутствуют обязательные данные покупателя (имя, email, адрес)',
-      received: req.body
+    return res.status(400).json({ 
+      error: 'Заполните имя, email и адрес' 
     });
   }
   
   if (!items || !Array.isArray(items) || items.length === 0) {
-    console.error('❌ Нет данных items или пустой массив');
-    return res.status(400).json({
-      success: false,
-      error: 'Нет товаров в заказе',
-      items: items
+    return res.status(400).json({ 
+      error: 'Нет товаров в заказе' 
     });
   }
   
-  if (!total || total <= 0) {
-    console.error('❌ Некорректная сумма заказа');
-    return res.status(400).json({
-      success: false,
-      error: 'Некорректная сумма заказа',
-      total: total
-    });
-  }
-  
-  // Начинаем транзакцию для атомарности
-  db.serialize(() => {
-    db.run('BEGIN TRANSACTION');
-    
-    // 1. Создаем заказ
-    const insertOrder = db.prepare(
-      `INSERT INTO orders (user_id, customer_name, customer_email, customer_address, total, comments) 
-       VALUES (?, ?, ?, ?, ?, ?)`
-    );
-    
-    insertOrder.run(
-      userId || null, 
-      customer.name, 
-      customer.email, 
-      customer.address, 
-      total, 
-      customer.comments || '',
-      function(err) {
-        if (err) {
-          console.error('❌ Ошибка при сохранении заказа:', err.message);
-          db.run('ROLLBACK');
-          return res.status(500).json({
-            success: false,
-            error: 'Ошибка базы данных при создании заказа',
-            details: err.message
-          });
-        }
-        
-        const orderId = this.lastID;
-        console.log('✅ Заказ сохранён! ID:', orderId);
-        
-        // 2. Добавляем товары заказа
-        const insertItems = db.prepare(
-          'INSERT INTO order_items (order_id, product_id, product_name, quantity, price) VALUES (?, ?, ?, ?, ?)'
-        );
-        
-        let itemsError = null;
-        
-        // Проверяем каждый товар перед добавлением
-        for (const item of items) {
-          if (!item.id || !item.name || !item.quantity || !item.price) {
-            itemsError = 'Некорректные данные товара';
-            break;
-          }
-          
-          insertItems.run(
-            orderId, 
-            item.id, 
-            item.name, 
-            item.quantity, 
-            item.price,
-            function(err) {
-              if (err) {
-                itemsError = err.message;
-              }
-            }
-          );
-        }
-        
-        insertItems.finalize();
-        
-        if (itemsError) {
-          console.error('❌ Ошибка при сохранении товаров:', itemsError);
-          db.run('ROLLBACK');
-          return res.status(500).json({
-            success: false,
-            error: 'Ошибка при сохранении товаров заказа',
-            details: itemsError
-          });
-        }
-        
-        console.log('✅ Товары заказа сохранены:', items.length, 'позиций');
-        
-        // 3. Фиксируем транзакцию
-        db.run('COMMIT', (err) => {
-          if (err) {
-            console.error('❌ Ошибка при коммите транзакции:', err.message);
-            return res.status(500).json({
-              success: false,
-              error: 'Ошибка завершения заказа',
-              details: err.message
-            });
-          }
-          
-          // Успешный ответ
-          res.json({
-            success: true,
-            message: 'Заказ успешно оформлен!',
-            orderId: orderId,
-            orderNumber: `COSMIC-${orderId.toString().padStart(6, '0')}`,
-            itemsCount: items.length,
-            total: total,
-            customer: {
-              name: customer.name,
-              email: customer.email
-            }
-          });
-          
-          console.log('🎉 Заказ полностью оформлен! ID:', orderId);
+  // ВРЕМЕННО без user_id
+  db.run(
+    `INSERT INTO orders (customer_name, customer_email, customer_address, total, comments) 
+     VALUES (?, ?, ?, ?, ?)`,
+    [customer.name, customer.email, customer.address, total, customer.comments || ''],
+    function(err) {
+      if (err) {
+        console.error('❌ Ошибка при сохранении заказа:', err.message);
+        return res.status(500).json({ 
+          error: 'Ошибка базы данных',
+          details: err.message 
         });
       }
-    );
-    
-    insertOrder.finalize();
-  });
+      
+      const orderId = this.lastID;
+      console.log('✅ Заказ сохранён! ID:', orderId);
+      
+      // Сохраняем товары
+      const stmt = db.prepare(
+        'INSERT INTO order_items (order_id, product_id, product_name, quantity, price) VALUES (?, ?, ?, ?, ?)'
+      );
+      
+      items.forEach(item => {
+        stmt.run(orderId, item.id, item.name, item.quantity, item.price);
+      });
+      
+      stmt.finalize();
+      console.log('✅ Товары сохранены:', items.length, 'шт.');
+      
+      res.json({
+        success: true,
+        message: 'Заказ успешно оформлен!',
+        orderId: orderId,
+        orderNumber: `COSMIC-${orderId}`,
+        customerName: customer.name,
+        total: total
+      });
+    }
+  );
 });
+
+// ==================== ДОПОЛНИТЕЛЬНЫЕ API ====================
+
 // Получение всех заказов
 app.get('/api/orders', (req, res) => {
   db.all('SELECT * FROM orders ORDER BY created_at DESC', [], (err, rows) => {
@@ -434,7 +342,8 @@ app.get('/api/test', (req, res) => {
     ]
   });
 });
-// Добавьте этот маршрут ПЕРЕД app.listen() в server.js
+
+// Проверка структуры таблиц
 app.get('/api/debug/tables', (req, res) => {
   db.all(
     "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name",
@@ -444,7 +353,6 @@ app.get('/api/debug/tables', (req, res) => {
         return res.status(500).json({ error: err.message });
       }
       
-      // Получаем структуру каждой таблицы
       const tableInfo = [];
       let processed = 0;
       
@@ -464,18 +372,7 @@ app.get('/api/debug/tables', (req, res) => {
     }
   );
 });
-// Запуск сервера
-app.listen(PORT, () => {
-  console.log(`=======================================`);
-  console.log(`🚀 Сервер космической аптеки запущен!`);
-  console.log(`📍 Порт: ${PORT}`);
-  console.log(`📋 Доступные API:`);
-  console.log(`   POST /api/register - регистрация`);
-  console.log(`   POST /api/login - вход`);
-  console.log(`   POST /api/orders - оформление заказа`);
-  console.log(`   GET  /api/test - проверка работы`);
-  console.log(`=======================================`);
-});
+
 // Проверка структуры таблицы orders
 app.get('/api/debug/orders-structure', (req, res) => {
   db.all("PRAGMA table_info(orders)", [], (err, columns) => {
@@ -488,4 +385,17 @@ app.get('/api/debug/orders-structure', (req, res) => {
       columnNames: columns.map(col => col.name)
     });
   });
+});
+
+// Запуск сервера
+app.listen(PORT, () => {
+  console.log(`=======================================`);
+  console.log(`🚀 Сервер космической аптеки запущен!`);
+  console.log(`📍 Порт: ${PORT}`);
+  console.log(`📋 Доступные API:`);
+  console.log(`   POST /api/register - регистрация`);
+  console.log(`   POST /api/login - вход`);
+  console.log(`   POST /api/orders - оформление заказа`);
+  console.log(`   GET  /api/test - проверка работы`);
+  console.log(`=======================================`);
 });
