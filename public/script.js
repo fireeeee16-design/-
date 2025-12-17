@@ -356,8 +356,12 @@ function openModal(modalId) {
     document.getElementById(modalId).style.display = 'flex';
 }
 
-// Открытие модального окна заказа
+// Открытие модального окна заказа - ИСПРАВЛЕННАЯ ВЕРСИЯ
 function openOrderModal() {
+    console.log('🛒 Открываю окно заказа...');
+    console.log('📦 Корзина:', cart);
+    console.log('👤 Пользователь:', currentUser);
+    
     if (cart.length === 0) {
         showNotification('Добавьте товары в корзину перед оформлением заказа', 'error');
         return;
@@ -370,25 +374,39 @@ function openOrderModal() {
     }
     
     const orderDetails = document.getElementById('order-details');
-    orderDetails.innerHTML = '';
-    
-    cart.forEach(item => {
-        const orderItem = document.createElement('div');
-        orderItem.className = 'order-item';
-        orderItem.innerHTML = `
-            <p>${item.name} x ${item.quantity}: ${item.price * item.quantity} ₽</p>
-        `;
-        orderDetails.appendChild(orderItem);
-    });
+    if (orderDetails) {
+        orderDetails.innerHTML = '';
+        
+        cart.forEach(item => {
+            const orderItem = document.createElement('div');
+            orderItem.className = 'order-item';
+            orderItem.innerHTML = `
+                <p>${item.name} x ${item.quantity}: ${item.price * item.quantity} ₽</p>
+            `;
+            orderDetails.appendChild(orderItem);
+        });
+    }
     
     const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const shipping = 500;
     const total = subtotal + shipping;
     
-    document.getElementById('order-total').textContent = total;
+    const orderTotalElement = document.getElementById('order-total');
+    if (orderTotalElement) {
+        orderTotalElement.textContent = total;
+    }
+    
+    // Заполняем поля формы данными пользователя
+    const nameInput = document.getElementById('name');
+    const emailInput = document.getElementById('email');
+    const addressInput = document.getElementById('address');
+    
+    if (nameInput && currentUser.name) nameInput.value = currentUser.name;
+    if (emailInput && currentUser.email) emailInput.value = currentUser.email;
+    if (addressInput && currentUser.address) addressInput.value = currentUser.address;
+    
     openModal('order-modal');
 }
-
 // Обработка входа
 async function handleLogin(e) {
     e.preventDefault();
@@ -534,25 +552,45 @@ async function showOrderHistory() {
     }
 }
 
-// Обработка заказа
+// Обработка заказа - ИСПРАВЛЕННАЯ ВЕРСИЯ
 async function handleOrder(e) {
     e.preventDefault();
+    
+    console.log('🛒 Начинаем оформление заказа...');
     
     if (!currentUser) {
         showNotification('Для оформления заказа необходимо войти в систему', 'error');
         return;
     }
     
-    const comments = document.getElementById('order-comments').value;
+    if (cart.length === 0) {
+        showNotification('Корзина пуста! Добавьте товары', 'error');
+        return;
+    }
     
-    // Подготовка данных заказа
+    // Получаем данные из формы
+    const name = document.getElementById('name')?.value || currentUser.name;
+    const email = document.getElementById('email')?.value || currentUser.email;
+    const address = document.getElementById('address')?.value || currentUser.address;
+    const comments = document.getElementById('comments')?.value || '';
+    
+    console.log('📋 Данные формы:', { name, email, address, comments });
+    console.log('📦 Корзина:', cart);
+    
+    // Рассчитываем итоговую сумму
+    const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const shipping = 500;
+    const total = subtotal + shipping;
+    
+    console.log('💰 Сумма заказа:', { subtotal, shipping, total });
+    
+    // ПРАВИЛЬНАЯ структура данных для сервера
     const orderData = {
-        customer: { 
-            id: currentUser.id,
-            name: currentUser.name, 
-            email: currentUser.email, 
-            address: currentUser.address, 
-            comments 
+        customer: {
+            name: name,
+            email: email,
+            address: address,
+            comments: comments
         },
         items: cart.map(item => ({
             id: item.id,
@@ -560,47 +598,61 @@ async function handleOrder(e) {
             price: item.price,
             quantity: item.quantity
         })),
-        total: document.getElementById('order-total').textContent,
-        userId: currentUser.id
+        total: total,
+        userId: currentUser.id  // ✅ userId отдельно, НЕ внутри customer
     };
     
+    console.log('📤 Отправляемые данные на сервер:', orderData);
+    
     try {
+        console.log('🚀 Отправляю запрос на /api/orders...');
+        
         const response = await fetch('/api/orders', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authToken}`
+                'Content-Type': 'application/json'
+                // ❌ Уберите Authorization header - он не нужен в текущей реализации сервера
             },
             body: JSON.stringify(orderData)
         });
         
-        if (response.ok) {
-            const result = await response.json();
-            showNotification(`Заказ №${result.orderId} успешно оформлен!`, 'success');
+        console.log('📥 Статус ответа:', response.status);
+        console.log('📥 URL:', response.url);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Текст ошибки:', errorText);
             
-            // Обновляем баланс пользователя
-            if (result.newBalance !== undefined) {
-                currentUser.balance = result.newBalance;
-                localStorage.setItem('cosmicUser', JSON.stringify(currentUser));
-                updateUIForUser();
+            try {
+                const errorData = JSON.parse(errorText);
+                throw new Error(errorData.error || `HTTP ${response.status}`);
+            } catch (e) {
+                throw new Error(`Ошибка сервера: ${response.status} - ${errorText}`);
             }
-            
-            // Очистка корзины
-            cart = [];
-            updateCart();
-            
-            // Закрытие модального окна и сброс формы
-            document.getElementById('order-modal').style.display = 'none';
-            e.target.reset();
-        } else {
-            throw new Error('Ошибка при оформлении заказа');
         }
+        
+        const result = await response.json();
+        console.log('✅ Успешный ответ сервера:', result);
+        
+        showNotification(`Заказ №${result.orderId} успешно оформлен!`, 'success');
+        
+        // Очистка корзины
+        cart = [];
+        localStorage.removeItem('cart');
+        updateCart();
+        
+        // Закрытие модального окна и сброс формы
+        document.getElementById('order-modal').style.display = 'none';
+        
+        // Если есть форма - сбросить её
+        const orderForm = document.getElementById('order-form');
+        if (orderForm) orderForm.reset();
+        
     } catch (error) {
-        console.error('Ошибка:', error);
-        showNotification('Ошибка при оформлении заказа. Попробуйте еще раз.', 'error');
+        console.error('❌ Ошибка при оформлении заказа:', error);
+        showNotification(`Ошибка: ${error.message}`, 'error');
     }
 }
-
 // Показать уведомление
 function showNotification(message, type = 'info') {
     const notification = document.getElementById('notification');
