@@ -44,12 +44,12 @@ function initializeDatabase() {
     db.get('SELECT COUNT(*) as count FROM users WHERE email = "admin@cosmic.pharmacy"', (err, row) => {
       if (row && row.count === 0) {
         db.run(
-          'INSERT INTO users (email, password, name, role, balance) VALUES (?, ?, ?, ?, ?)',
-          ['admin@cosmic.pharmacy', 'admin123', 'Главный Администратор', 'admin', 100000],
-          (err) => {
-            if (!err) console.log('✅ Создан администратор: admin@cosmic.pharmacy / admin123');
-          }
-        );
+    'INSERT INTO users (email, password, name, address, role, balance) VALUES (?, ?, ?, ?, ?, ?)',
+    ['admin@cosmic.pharmacy', 'admin123', 'Главный Администратор', 'Орбитальная станция "Мир-2", Сектор 5', 'admin', 100000],
+    (err) => {
+        if (!err) console.log('✅ Создан администратор с адресом');
+    }
+);
       }
     });
     

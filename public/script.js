@@ -359,8 +359,6 @@ function openModal(modalId) {
 // Открытие модального окна заказа - ИСПРАВЛЕННАЯ ВЕРСИЯ
 function openOrderModal() {
     console.log('🛒 Открываю окно заказа...');
-    console.log('📦 Корзина:', cart);
-    console.log('👤 Пользователь:', currentUser);
     
     if (cart.length === 0) {
         showNotification('Добавьте товары в корзину перед оформлением заказа', 'error');
@@ -373,6 +371,7 @@ function openOrderModal() {
         return;
     }
     
+    // Показываем товары
     const orderDetails = document.getElementById('order-details');
     if (orderDetails) {
         orderDetails.innerHTML = '';
@@ -381,12 +380,13 @@ function openOrderModal() {
             const orderItem = document.createElement('div');
             orderItem.className = 'order-item';
             orderItem.innerHTML = `
-                <p>${item.name} x ${item.quantity}: ${item.price * item.quantity} ₽</p>
+                <p><strong>${item.name}</strong> x ${item.quantity} = ${item.price * item.quantity} ₽</p>
             `;
             orderDetails.appendChild(orderItem);
         });
     }
     
+    // Рассчитываем сумму
     const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const shipping = 500;
     const total = subtotal + shipping;
@@ -396,14 +396,32 @@ function openOrderModal() {
         orderTotalElement.textContent = total;
     }
     
-    // Заполняем поля формы данными пользователя
-    const nameInput = document.getElementById('name');
-    const emailInput = document.getElementById('email');
-    const addressInput = document.getElementById('address');
-    
-    if (nameInput && currentUser.name) nameInput.value = currentUser.name;
-    if (emailInput && currentUser.email) emailInput.value = currentUser.email;
-    if (addressInput && currentUser.address) addressInput.value = currentUser.address;
+    // Заполняем форму с проверкой
+    setTimeout(() => {
+        const nameInput = document.getElementById('name');
+        const emailInput = document.getElementById('email');
+        const addressInput = document.getElementById('address');
+        
+        if (nameInput && currentUser.name) {
+            nameInput.value = currentUser.name;
+        }
+        
+        if (emailInput && currentUser.email) {
+            emailInput.value = currentUser.email;
+        }
+        
+        // ОСОБОЕ ВНИМАНИЕ: если адреса нет, оставляем поле пустым и просим заполнить
+        if (addressInput) {
+            addressInput.value = currentUser.address || '';
+            if (!currentUser.address) {
+                addressInput.placeholder = 'Введите адрес доставки (обязательно)';
+                addressInput.classList.add('required-field');
+            }
+        }
+        
+        // Убираем предыдущие ошибки
+        document.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
+    }, 100);
     
     openModal('order-modal');
 }
@@ -553,6 +571,7 @@ async function showOrderHistory() {
 }
 
 // Обработка заказа - ИСПРАВЛЕННАЯ ВЕРСИЯ
+// ИСПРАВЛЕННЫЙ КОД в handleOrder():
 async function handleOrder(e) {
     e.preventDefault();
     
@@ -568,14 +587,28 @@ async function handleOrder(e) {
         return;
     }
     
-    // Получаем данные из формы
+    // ПОЛУЧАЕМ ДАННЫЕ ИЗ ФОРМЫ
     const name = document.getElementById('name')?.value || currentUser.name;
     const email = document.getElementById('email')?.value || currentUser.email;
-    const address = document.getElementById('address')?.value || currentUser.address;
+    const addressInput = document.getElementById('address');
+    const address = addressInput?.value || currentUser.address || '';
     const comments = document.getElementById('comments')?.value || '';
     
     console.log('📋 Данные формы:', { name, email, address, comments });
     console.log('📦 Корзина:', cart);
+    
+    // ПРОВЕРКА ОБЯЗАТЕЛЬНЫХ ПОЛЕЙ
+    if (!name || !email || !address) {
+        console.error('❌ Не заполнены обязательные поля:', { name, email, address });
+        showNotification('Заполните все обязательные поля: имя, email и адрес!', 'error');
+        
+        // Подсветим пустые поля
+        if (!name) document.getElementById('name')?.classList.add('error');
+        if (!email) document.getElementById('email')?.classList.add('error');
+        if (!address) document.getElementById('address')?.classList.add('error');
+        
+        return;
+    }
     
     // Рассчитываем итоговую сумму
     const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -589,7 +622,7 @@ async function handleOrder(e) {
         customer: {
             name: name,
             email: email,
-            address: address,
+            address: address,  // ✅ Теперь точно строка, не null
             comments: comments
         },
         items: cart.map(item => ({
@@ -599,7 +632,7 @@ async function handleOrder(e) {
             quantity: item.quantity
         })),
         total: total,
-        userId: currentUser.id  // ✅ userId отдельно, НЕ внутри customer
+        userId: currentUser.id
     };
     
     console.log('📤 Отправляемые данные на сервер:', orderData);
@@ -611,13 +644,11 @@ async function handleOrder(e) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
-                // ❌ Уберите Authorization header - он не нужен в текущей реализации сервера
             },
             body: JSON.stringify(orderData)
         });
         
         console.log('📥 Статус ответа:', response.status);
-        console.log('📥 URL:', response.url);
         
         if (!response.ok) {
             const errorText = await response.text();
@@ -634,19 +665,15 @@ async function handleOrder(e) {
         const result = await response.json();
         console.log('✅ Успешный ответ сервера:', result);
         
-        showNotification(`Заказ №${result.orderId} успешно оформлен!`, 'success');
+        showNotification(`Заказ №${result.orderNumber || result.orderId} успешно оформлен!`, 'success');
         
         // Очистка корзины
         cart = [];
         localStorage.removeItem('cart');
         updateCart();
         
-        // Закрытие модального окна и сброс формы
+        // Закрытие модального окна
         document.getElementById('order-modal').style.display = 'none';
-        
-        // Если есть форма - сбросить её
-        const orderForm = document.getElementById('order-form');
-        if (orderForm) orderForm.reset();
         
     } catch (error) {
         console.error('❌ Ошибка при оформлении заказа:', error);
