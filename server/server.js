@@ -204,10 +204,7 @@ app.post('/api/login', (req, res) => {
 });
 
 // ==================== ДОПОЛНИТЕЛЬНЫЕ API ====================
-
 // ==================== ОБРАБОТКА ЗАКАЗОВ ====================
-
-// ВЕРСИЯ 1: Проверка таблиц и простое сохранение
 app.post('/api/orders', (req, res) => {
   console.log('📦 Получен запрос на заказ в:', new Date().toISOString());
   
@@ -216,11 +213,12 @@ app.post('/api/orders', (req, res) => {
   
   const { customer, items, total, userId } = req.body;
   
-  if (!customer) {
+  // Проверка данных
+  if (!customer || !customer.name || !customer.email || !customer.address) {
     console.error('❌ Нет данных customer');
     return res.status(400).json({
       success: false,
-      error: 'Отсутствуют данные покупателя',
+      error: 'Отсутствуют обязательные данные покупателя (имя, email, адрес)',
       received: req.body
     });
   }
@@ -234,64 +232,121 @@ app.post('/api/orders', (req, res) => {
     });
   }
   
-  // 1. Сначала проверим существование таблиц
-  db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='orders'", (err, row) => {
-    if (err || !row) {
-      console.error('❌ Таблица orders не существует!');
-      return res.status(500).json({
-        success: false,
-        error: 'Таблица заказов не создана',
-        suggestion: 'Перезапустите сервер для создания таблиц'
-      });
-    }
+  if (!total || total <= 0) {
+    console.error('❌ Некорректная сумма заказа');
+    return res.status(400).json({
+      success: false,
+      error: 'Некорректная сумма заказа',
+      total: total
+    });
+  }
+  
+  // Начинаем транзакцию для атомарности
+  db.serialize(() => {
+    db.run('BEGIN TRANSACTION');
     
-    // 2. Таблица существует - пробуем сохранить
-    console.log('💾 Сохраняю заказ для:', customer.name);
-    
-    db.run(
+    // 1. Создаем заказ
+    const insertOrder = db.prepare(
       `INSERT INTO orders (user_id, customer_name, customer_email, customer_address, total, comments) 
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [userId || null, customer.name, customer.email, customer.address, total, customer.comments || ''],
+       VALUES (?, ?, ?, ?, ?, ?)`
+    );
+    
+    insertOrder.run(
+      userId || null, 
+      customer.name, 
+      customer.email, 
+      customer.address, 
+      total, 
+      customer.comments || '',
       function(err) {
         if (err) {
           console.error('❌ Ошибка при сохранении заказа:', err.message);
-          console.error('❌ Полная ошибка:', err);
+          db.run('ROLLBACK');
           return res.status(500).json({
             success: false,
-            error: 'Ошибка базы данных',
-            details: err.message,
-            sqlError: true
+            error: 'Ошибка базы данных при создании заказа',
+            details: err.message
           });
         }
         
         const orderId = this.lastID;
         console.log('✅ Заказ сохранён! ID:', orderId);
         
-        // Сохраняем товары заказа
-        const stmt = db.prepare(
+        // 2. Добавляем товары заказа
+        const insertItems = db.prepare(
           'INSERT INTO order_items (order_id, product_id, product_name, quantity, price) VALUES (?, ?, ?, ?, ?)'
         );
         
-        items.forEach(item => {
-          stmt.run(orderId, item.id, item.name, item.quantity, item.price);
-        });
+        let itemsError = null;
         
-        stmt.finalize();
+        // Проверяем каждый товар перед добавлением
+        for (const item of items) {
+          if (!item.id || !item.name || !item.quantity || !item.price) {
+            itemsError = 'Некорректные данные товара';
+            break;
+          }
+          
+          insertItems.run(
+            orderId, 
+            item.id, 
+            item.name, 
+            item.quantity, 
+            item.price,
+            function(err) {
+              if (err) {
+                itemsError = err.message;
+              }
+            }
+          );
+        }
+        
+        insertItems.finalize();
+        
+        if (itemsError) {
+          console.error('❌ Ошибка при сохранении товаров:', itemsError);
+          db.run('ROLLBACK');
+          return res.status(500).json({
+            success: false,
+            error: 'Ошибка при сохранении товаров заказа',
+            details: itemsError
+          });
+        }
+        
         console.log('✅ Товары заказа сохранены:', items.length, 'позиций');
         
-        res.json({
-          success: true,
-          message: 'Заказ успешно оформлен!',
-          orderId: orderId,
-          orderNumber: `COSMIC-${orderId}`,
-          itemsCount: items.length,
-          total: total
+        // 3. Фиксируем транзакцию
+        db.run('COMMIT', (err) => {
+          if (err) {
+            console.error('❌ Ошибка при коммите транзакции:', err.message);
+            return res.status(500).json({
+              success: false,
+              error: 'Ошибка завершения заказа',
+              details: err.message
+            });
+          }
+          
+          // Успешный ответ
+          res.json({
+            success: true,
+            message: 'Заказ успешно оформлен!',
+            orderId: orderId,
+            orderNumber: `COSMIC-${orderId.toString().padStart(6, '0')}`,
+            itemsCount: items.length,
+            total: total,
+            customer: {
+              name: customer.name,
+              email: customer.email
+            }
+          });
+          
+          console.log('🎉 Заказ полностью оформлен! ID:', orderId);
         });
       }
     );
+    
+    insertOrder.finalize();
   });
 });
-  
 // Получение всех заказов
 app.get('/api/orders', (req, res) => {
   db.all('SELECT * FROM orders ORDER BY created_at DESC', [], (err, rows) => {
