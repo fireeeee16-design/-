@@ -792,3 +792,18 @@ p {
         flex-direction: column;
     }
 }
+.error {
+    border: 2px solid #ff3860 !important;
+    background-color: #fff5f7 !important;
+}
+
+.error-message {
+    color: #ff3860;
+    font-size: 0.85rem;
+    margin-top: 5px;
+    display: none;
+}
+
+.error-message.show {
+    display: block;
+}

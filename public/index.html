@@ -177,38 +177,46 @@
         </div>
     </div>
 
-    <div id="order-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            <h2>Оформление заказа</h2>
-            <form id="order-form">
-                <div class="form-group">
-                    <label for="order-name">ФИО</label>
-                    <input type="text" id="order-name" required>
-                </div>
-                <div class="form-group">
-                    <label for="order-email">Электронная почта</label>
-                    <input type="email" id="order-email" required>
-                </div>
-                <div class="form-group">
-                    <label for="order-address">Адрес доставки</label>
-                    <input type="text" id="order-address" placeholder="Планета, станция, сектор" required>
-                </div>
-                <div class="form-group">
-                    <label for="order-comments">Комментарий к заказу</label>
-                    <textarea id="order-comments" rows="3"></textarea>
-                </div>
-                <div class="order-summary">
-                    <h3>Детали заказа</h3>
-                    <div id="order-details">
-                        <!-- Детали заказа  -->
-                    </div>
-                    <p class="total">Итого к оплате: <span id="order-total">0</span> ₽</p>
-                </div>
-                <button type="submit" class="submit-btn">Подтвердить заказ</button>
-            </form>
+<div id="order-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2>Оформление заказа</h2>
+        
+        <div class="order-summary">
+            <h3>Товары в заказе:</h3>
+            <div id="order-details">
+                <!-- Детали заказа будут здесь -->
+            </div>
         </div>
+        
+        <form id="order-form">
+            <div class="form-group">
+                <label for="name">ФИО *</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Электронная почта *</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="address">Адрес доставки *</label>
+                <input type="text" id="address" name="address" 
+                       placeholder="Планета, станция, сектор, координаты" required>
+            </div>
+            <div class="form-group">
+                <label for="comments">Комментарий к заказу</label>
+                <textarea id="comments" name="comments" rows="3" 
+                          placeholder="Особые пожелания или инструкции"></textarea>
+            </div>
+            
+            <div class="order-total">
+                <h3>Итого к оплате: <span id="order-total">0</span> ₽</h3>
+            </div>
+            
+            <button type="submit" class="submit-btn">Подтвердить заказ</button>
+        </form>
     </div>
+</div>
 
     <div id="notification" class="notification"></div>
 
