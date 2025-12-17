@@ -116,8 +116,44 @@ function initializeDatabase() {
   });
 }
 
-// ==================== API ДЛЯ РЕГИСТРАЦИИ И ВХОДА ====================
+// Функция добавления недостающих колонок
+function addMissingColumns() {
+  console.log('🔍 Проверяем структуру таблиц...');
+  
+  // Проверяем и добавляем user_id если нет
+  db.all("PRAGMA table_info(orders)", [], (err, columns) => {
+    if (err) {
+      console.error('❌ Ошибка проверки таблицы orders:', err.message);
+      return;
+    }
+    
+    const hasUserId = columns.some(col => col.name === 'user_id');
+    console.log('📊 Столбцы таблицы orders:', columns.map(c => c.name));
+    console.log('✅ Есть user_id?', hasUserId);
+    
+    if (!hasUserId) {
+      console.log('➕ Добавляю колонку user_id в таблицу orders...');
+      db.run('ALTER TABLE orders ADD COLUMN user_id INTEGER', (err) => {
+        if (err) {
+          console.error('❌ Ошибка добавления user_id:', err.message);
+        } else {
+          console.log('✅ Колонка user_id добавлена!');
+        }
+      });
+    }
+  });
+}
 
+// Вызовите её в обработчике подключения к БД:
+const db = new sqlite3.Database('./database.sqlite', (err) => {
+  if (err) {
+    console.error('Ошибка подключения к БД:', err.message);
+  } else {
+    console.log('✅ База данных SQLite подключена');
+    initializeDatabase();
+    addMissingColumns(); // ← ДОБАВЬТЕ ЭТУ СТРОЧКУ
+  }
+});
 // Регистрация
 app.post('/api/register', (req, res) => {
   const { email, password, name, address } = req.body;
