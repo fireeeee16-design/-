@@ -205,15 +205,18 @@ app.post('/api/login', (req, res) => {
 
 // ==================== ДОПОЛНИТЕЛЬНЫЕ API ====================
 
-// ВРЕМЕННЫЙ УПРОЩЁННЫЙ ОБРАБОТЧИК ЗАКАЗОВ
+// ==================== ОБРАБОТКА ЗАКАЗОВ ====================
+
+// ВЕРСИЯ 1: Проверка таблиц и простое сохранение
 app.post('/api/orders', (req, res) => {
   console.log('📦 Получен запрос на заказ в:', new Date().toISOString());
   
-  // Логируем ВСЕ данные запроса
+  // Логируем данные запроса
   console.log('📋 Тело запроса:', JSON.stringify(req.body, null, 2));
   
-  // Проверяем наличие обязательных данных
-  if (!req.body.customer) {
+  const { customer, items, total, userId } = req.body;
+  
+  if (!customer) {
     console.error('❌ Нет данных customer');
     return res.status(400).json({
       success: false,
@@ -222,38 +225,73 @@ app.post('/api/orders', (req, res) => {
     });
   }
   
-  if (!req.body.items || !Array.isArray(req.body.items) || req.body.items.length === 0) {
+  if (!items || !Array.isArray(items) || items.length === 0) {
     console.error('❌ Нет данных items или пустой массив');
     return res.status(400).json({
       success: false,
       error: 'Нет товаров в заказе',
-      items: req.body.items
+      items: items
     });
   }
   
-  // ВРЕМЕННО: просто возвращаем успешный ответ без сохранения в БД
-  const testOrderId = Date.now();
-  
-  console.log('✅ Заказ принят (тестовый режим):', {
-    customerName: req.body.customer.name,
-    itemsCount: req.body.items.length,
-    total: req.body.total || 'не указано'
-  });
-  
-  res.json({
-    success: true,
-    message: 'Заказ успешно оформлен! (тестовый режим)',
-    orderId: testOrderId,
-    orderNumber: `COSMIC-TEST-${testOrderId}`,
-    debug: {
-      timestamp: new Date().toISOString(),
-      customer: req.body.customer,
-      itemsCount: req.body.items.length,
-      total: req.body.total,
-      userId: req.body.userId || null
+  // 1. Сначала проверим существование таблиц
+  db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='orders'", (err, row) => {
+    if (err || !row) {
+      console.error('❌ Таблица orders не существует!');
+      return res.status(500).json({
+        success: false,
+        error: 'Таблица заказов не создана',
+        suggestion: 'Перезапустите сервер для создания таблиц'
+      });
     }
+    
+    // 2. Таблица существует - пробуем сохранить
+    console.log('💾 Сохраняю заказ для:', customer.name);
+    
+    db.run(
+      `INSERT INTO orders (user_id, customer_name, customer_email, customer_address, total, comments) 
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [userId || null, customer.name, customer.email, customer.address, total, customer.comments || ''],
+      function(err) {
+        if (err) {
+          console.error('❌ Ошибка при сохранении заказа:', err.message);
+          console.error('❌ Полная ошибка:', err);
+          return res.status(500).json({
+            success: false,
+            error: 'Ошибка базы данных',
+            details: err.message,
+            sqlError: true
+          });
+        }
+        
+        const orderId = this.lastID;
+        console.log('✅ Заказ сохранён! ID:', orderId);
+        
+        // Сохраняем товары заказа
+        const stmt = db.prepare(
+          'INSERT INTO order_items (order_id, product_id, product_name, quantity, price) VALUES (?, ?, ?, ?, ?)'
+        );
+        
+        items.forEach(item => {
+          stmt.run(orderId, item.id, item.name, item.quantity, item.price);
+        });
+        
+        stmt.finalize();
+        console.log('✅ Товары заказа сохранены:', items.length, 'позиций');
+        
+        res.json({
+          success: true,
+          message: 'Заказ успешно оформлен!',
+          orderId: orderId,
+          orderNumber: `COSMIC-${orderId}`,
+          itemsCount: items.length,
+          total: total
+        });
+      }
+    );
   });
 });
+  
 // Получение всех заказов
 app.get('/api/orders', (req, res) => {
   db.all('SELECT * FROM orders ORDER BY created_at DESC', [], (err, rows) => {
