@@ -440,3 +440,16 @@ app.listen(PORT, () => {
   console.log(`   GET  /api/test - проверка работы`);
   console.log(`=======================================`);
 });
+// Проверка структуры таблицы orders
+app.get('/api/debug/orders-structure', (req, res) => {
+  db.all("PRAGMA table_info(orders)", [], (err, columns) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({
+      table: 'orders',
+      columns: columns,
+      columnNames: columns.map(col => col.name)
+    });
+  });
+});
