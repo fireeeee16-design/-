@@ -1,0 +1,61 @@
+/* ========== CSS ПЕРЕМЕННЫЕ ========== */
+:root {
+    /* Цветовая палитра */
+    --primary-color: #0b3d91;
+    --secondary-color: #6c63ff;
+    --accent-color: #00d4ff;
+    --dark-color: #0a1128;
+    --light-color: #f8f9fa;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --gray-color: #6c757d;
+    
+    /* Градиенты */
+    --space-gradient: linear-gradient(135deg, #0a1128 0%, #1a237e 100%);
+    --neon-gradient: linear-gradient(to right, var(--secondary-color), var(--accent-color));
+    
+    /* Тени */
+    --neon-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+    --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    --hover-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    
+    /* Отступы */
+    --space-xs: 0.5rem;
+    --space-sm: 1rem;
+    --space-md: 1.5rem;
+    --space-lg: 2rem;
+    --space-xl: 3rem;
+    --space-xxl: 5rem;
+    
+    /* Шрифты */
+    --font-heading: 'Orbitron', sans-serif;
+    --font-body: 'Roboto', sans-serif;
+    
+    /* Размеры шрифтов */
+    --font-size-xs: 0.8rem;
+    --font-size-sm: 0.9rem;
+    --font-size-md: 1rem;
+    --font-size-lg: 1.2rem;
+    --font-size-xl: 1.5rem;
+    --font-size-xxl: 2.5rem;
+    --font-size-xxxl: 3.5rem;
+    
+    /* Скругления */
+    --radius-sm: 5px;
+    --radius-md: 10px;
+    --radius-lg: 20px;
+    --radius-xl: 30px;
+    --radius-full: 50%;
+    
+    /* Транзиции */
+    --transition-fast: 0.2s ease;
+    --transition-normal: 0.3s ease;
+    --transition-slow: 0.5s ease;
+    
+    /* Z-index уровни */
+    --z-dropdown: 1000;
+    --z-sticky: 1020;
+    --z-modal: 2000;
+    --z-notification: 3000;
+}

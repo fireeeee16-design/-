@@ -1,0 +1,115 @@
+/* ========== СЕКЦИЯ ПРОДУКТОВ ========== */
+.products-section {
+    background-color: rgba(15, 23, 42, 0.9);
+}
+
+.filter-controls {
+    display: flex;
+    justify-content: center;
+    margin-bottom: var(--space-xl);
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    background: transparent;
+    border: 2px solid var(--secondary-color);
+    color: var(--light-color);
+    padding: 10px 20px;
+    margin: 0 10px 10px 0;
+    border-radius: var(--radius-xl);
+    font-family: var(--font-heading);
+    font-weight: 700;
+}
+
+.filter-btn.active,
+.filter-btn:hover {
+    background: var(--secondary-color);
+    color: var(--dark-color);
+}
+
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-lg);
+}
+
+.product-card {
+    background: rgba(26, 35, 126, 0.3);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid rgba(108, 99, 255, 0.2);
+}
+
+.product-card:hover {
+    transform: translateY(-10px);
+    box-shadow: var(--neon-shadow);
+    border-color: var(--accent-color);
+}
+
+.product-image {
+    height: 200px;
+    overflow: hidden;
+}
+
+.product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--transition-slow);
+}
+
+.product-card:hover .product-image img {
+    transform: scale(1.1);
+}
+
+.product-info {
+    padding: var(--space-md);
+}
+
+.product-category {
+    display: inline-block;
+    background: rgba(0, 212, 255, 0.2);
+    color: var(--accent-color);
+    padding: 5px 10px;
+    border-radius: var(--radius-lg);
+    font-size: var(--font-size-xs);
+    margin-bottom: 10px;
+}
+
+.product-name {
+    font-size: 1.3rem;
+    margin-bottom: 10px;
+}
+
+.product-description {
+    color: #ccc;
+    font-size: var(--font-size-sm);
+    margin-bottom: 15px;
+    min-height: 60px;
+}
+
+.product-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.product-price {
+    font-family: var(--font-heading);
+    font-size: var(--font-size-xl);
+    color: var(--accent-color);
+    font-weight: 700;
+}
+
+.add-to-cart {
+    background: var(--secondary-color);
+    color: var(--dark-color);
+    padding: 8px 15px;
+    border-radius: var(--radius-lg);
+    font-family: var(--font-heading);
+    font-weight: 700;
+}
+
+.add-to-cart:hover {
+    background: var(--accent-color);
+}

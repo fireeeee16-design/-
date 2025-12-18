@@ -1,0 +1,36 @@
+/* ========== УВЕДОМЛЕНИЯ ========== */
+.notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 1rem 2rem;
+    border-radius: var(--radius-sm);
+    color: var(--light-color);
+    font-weight: bold;
+    z-index: var(--z-notification);
+    display: none;
+    animation: slideIn 0.3s ease-out;
+}
+
+.notification.success {
+    background-color: var(--success-color);
+}
+
+.notification.error {
+    background-color: var(--danger-color);
+}
+
+.notification.info {
+    background-color: var(--primary-color);
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}

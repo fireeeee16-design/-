@@ -1,0 +1,116 @@
+/* ========== МОДАЛЬНЫЕ ОКНА ========== */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: var(--z-modal);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: var(--space-gradient);
+    padding: var(--space-lg);
+    border-radius: var(--radius-md);
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+    border: 1px solid var(--accent-color);
+    box-shadow: var(--neon-shadow);
+}
+
+.wide-modal {
+    max-width: 90% !important;
+    width: 90% !important;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.close-modal {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 1.5rem;
+    color: var(--accent-color);
+    cursor: pointer;
+}
+
+.form-group {
+    margin-bottom: var(--space-md);
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: var(--space-xs);
+    color: var(--accent-color);
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(108, 99, 255, 0.5);
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--light-color);
+    font-size: 1rem;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+.submit-btn {
+    width: 100%;
+    background: var(--neon-gradient);
+    color: var(--dark-color);
+    padding: 15px;
+    border-radius: var(--radius-xl);
+    font-family: var(--font-heading);
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.submit-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--neon-shadow);
+}
+
+.order-summary {
+    background: rgba(26, 35, 126, 0.3);
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    margin: var(--space-md) 0;
+}
+
+.order-item {
+    margin-bottom: 10px;
+}
+
+.order-total {
+    margin: 20px 0;
+}
+
+.error {
+    border: 2px solid #ff3860 !important;
+    background-color: #fff5f7 !important;
+}
+
+.error-message {
+    color: #ff3860;
+    font-size: 0.85rem;
+    margin-top: 5px;
+    display: none;
+}
+
+.error-message.show {
+    display: block;
+}

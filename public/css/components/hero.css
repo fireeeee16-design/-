@@ -1,0 +1,63 @@
+/* ========== ГЕРОЙ СЕКЦИЯ ========== */
+.hero {
+    padding: var(--space-xxl) 0;
+    background: url('https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1171&q=80') no-repeat center center/cover;
+    position: relative;
+}
+
+.hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 17, 40, 0.8);
+}
+
+.hero .container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    z-index: 1;
+}
+
+.hero-content {
+    flex: 1;
+    max-width: 600px;
+}
+
+.hero-content p {
+    font-size: 1.3rem;
+    margin-bottom: var(--space-lg);
+    color: #ccc;
+}
+
+.cta-button {
+    background: var(--neon-gradient);
+    color: var(--dark-color);
+    padding: 15px 40px;
+    border-radius: var(--radius-xl);
+    font-family: var(--font-heading);
+    font-size: 1.2rem;
+    font-weight: 700;
+    box-shadow: var(--neon-shadow);
+}
+
+.cta-button:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--hover-shadow);
+}
+
+.hero-image {
+    flex: 1;
+    text-align: right;
+}
+
+.hero-image img {
+    width: 100%;
+    max-width: 500px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--neon-shadow);
+}

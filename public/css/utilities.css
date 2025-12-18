@@ -1,0 +1,73 @@
+/* ========== УТИЛИТАРНЫЕ КЛАССЫ ========== */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.text-success { color: var(--success-color); }
+.text-error { color: var(--danger-color); }
+.text-warning { color: var(--warning-color); }
+.text-info { color: var(--accent-color); }
+
+.bg-dark { background-color: var(--dark-color); }
+.bg-light { background-color: var(--light-color); }
+.bg-primary { background-color: var(--primary-color); }
+
+.mt-1 { margin-top: var(--space-xs); }
+.mt-2 { margin-top: var(--space-sm); }
+.mt-3 { margin-top: var(--space-md); }
+.mt-4 { margin-top: var(--space-lg); }
+.mt-5 { margin-top: var(--space-xl); }
+
+.mb-1 { margin-bottom: var(--space-xs); }
+.mb-2 { margin-bottom: var(--space-sm); }
+.mb-3 { margin-bottom: var(--space-md); }
+.mb-4 { margin-bottom: var(--space-lg); }
+.mb-5 { margin-bottom: var(--space-xl); }
+
+.p-1 { padding: var(--space-xs); }
+.p-2 { padding: var(--space-sm); }
+.p-3 { padding: var(--space-md); }
+.p-4 { padding: var(--space-lg); }
+.p-5 { padding: var(--space-xl); }
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-row { flex-direction: row; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.justify-around { justify-content: space-around; }
+
+.grid { display: grid; }
+.gap-1 { gap: var(--space-xs); }
+.gap-2 { gap: var(--space-sm); }
+.gap-3 { gap: var(--space-md); }
+.gap-4 { gap: var(--space-lg); }
+
+.hidden { display: none; }
+.block { display: block; }
+.inline-block { display: inline-block; }
+
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+
+.rounded-sm { border-radius: var(--radius-sm); }
+.rounded-md { border-radius: var(--radius-md); }
+.rounded-lg { border-radius: var(--radius-lg); }
+.rounded-full { border-radius: var(--radius-full); }
+
+.shadow { box-shadow: var(--card-shadow); }
+.shadow-neon { box-shadow: var(--neon-shadow); }
+.shadow-hover { box-shadow: var(--hover-shadow); }
+
+.cursor-pointer { cursor: pointer; }
+.cursor-default { cursor: default; }
+
+.transition-all { transition: all var(--transition-normal); }
+.transition-transform { transition: transform var(--transition-normal); }
+.transition-opacity { transition: opacity var(--transition-normal); }
+
+.hover\:scale-105:hover { transform: scale(1.05); }
+.hover\:scale-110:hover { transform: scale(1.1); }
+.hover\:translateY-2:hover { transform: translateY(-2px); }
+.hover\:translateY-3:hover { transform: translateY(-3px); }

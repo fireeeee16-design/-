@@ -1,0 +1,54 @@
+/* ========== СЕКЦИЯ "О НАС" ========== */
+.about-section {
+    background-color: rgba(15, 23, 42, 0.9);
+}
+
+.about-content {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xl);
+    flex-wrap: wrap;
+}
+
+.about-text {
+    flex: 1;
+}
+
+.features {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--space-lg);
+    margin-top: var(--space-lg);
+}
+
+.feature {
+    text-align: center;
+    padding: var(--space-md);
+    background: rgba(26, 35, 126, 0.3);
+    border-radius: var(--radius-md);
+}
+
+.feature:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--neon-shadow);
+}
+
+.feature i {
+    font-size: 2.5rem;
+    color: var(--accent-color);
+    margin-bottom: var(--space-sm);
+}
+
+.feature h4 {
+    margin-bottom: var(--space-xs);
+}
+
+.about-image {
+    flex: 1;
+}
+
+.about-image img {
+    width: 100%;
+    border-radius: var(--radius-md);
+    box-shadow: var(--neon-shadow);
+}

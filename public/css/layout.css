@@ -1,0 +1,40 @@
+/* ========== ОСНОВНАЯ РАЗМЕТКА ========== */
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+section {
+    padding: var(--space-xxl) 0;
+}
+
+h1 {
+    font-size: var(--font-size-xxxl);
+    background: linear-gradient(to right, var(--accent-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-transform: uppercase;
+}
+
+h2 {
+    font-size: var(--font-size-xxl);
+    color: var(--accent-color);
+    text-align: center;
+    margin-bottom: var(--space-lg);
+    position: relative;
+}
+
+h2::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 3px;
+    background: var(--accent-color);
+    border-radius: var(--radius-sm);
+}
