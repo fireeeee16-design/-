@@ -72,7 +72,7 @@ const products = [
 let cart = JSON.parse(localStorage.getItem('cart')) || [];
 let currentFilter = 'all';
 let currentUser = JSON.parse(localStorage.getItem('cosmicUser')) || null;
-let authToken = localStorage.getItem('cosmicToken') || null;
+
 
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
@@ -89,7 +89,7 @@ function initApp() {
 
 // Загрузка сессии пользователя
 function loadSession() {
-    if (currentUser && authToken) {
+    if (currentUser) {
         updateUIForUser();
     }
 }
@@ -432,7 +432,7 @@ async function handleLogin(e) {
     const password = document.getElementById('login-password').value;
     
     try {
-        const response = await fetch('https://cosmic-pharmacy.onrender.com/api/login', {
+        const response = await fetch('/api/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -442,7 +442,7 @@ async function handleLogin(e) {
         
         if (response.ok) {
             const result = await response.json();
-            saveUserSession(result.user, result.token);
+            saveUserSession(result.user);
             showNotification(`Вход выполнен для ${result.user.name}`, 'success');
             document.getElementById('login-modal').style.display = 'none';
             e.target.reset();
@@ -464,7 +464,7 @@ async function handleRegister(e) {
     const address = document.getElementById('register-address').value;
     
     try {
-        const response = await fetch('https://cosmic-pharmacy.onrender.com/api/register', {
+        const response = await fetch('/api/register', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -474,7 +474,7 @@ async function handleRegister(e) {
         
         if (response.ok) {
             const result = await response.json();
-            saveUserSession(result.user, result.token);
+            saveUserSession(result.user);
             showNotification(`Регистрация успешна для ${name}`, 'success');
             document.getElementById('register-modal').style.display = 'none';
             e.target.reset();
@@ -486,14 +486,32 @@ async function handleRegister(e) {
         showNotification('Ошибка при регистрации. Возможно email уже используется.', 'error');
     }
 }
+// Функция проверки баланса
+async function checkUserBalance() {
+    if (!currentUser || !currentUser.id) return;
+    
+    try {
+        const response = await fetch(`/api/user/balance/${currentUser.id}`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                currentUser.balance = data.user.balance;
+                localStorage.setItem('cosmicUser', JSON.stringify(currentUser));
+                updateUIForUser();
+                console.log('💰 Баланс обновлён:', currentUser.balance);
+            }
+        }
+    } catch (error) {
+        console.error('❌ Ошибка проверки баланса:', error);
+    }
+}
 
 // Сохранение сессии пользователя
-function saveUserSession(user, token) {
+function saveUserSession(user) {
     currentUser = user;
-    authToken = token;
     localStorage.setItem('cosmicUser', JSON.stringify(user));
-    localStorage.setItem('cosmicToken', token);
     updateUIForUser();
+    checkUserBalance();
 }
 
 // Обновление интерфейса для пользователя
@@ -510,19 +528,21 @@ function updateUIForUser() {
 }
 
 // Выход пользователя
+// Выход пользователя - ИСПРАВЛЕННАЯ
 function logoutUser() {
     currentUser = null;
-    authToken = null;
     localStorage.removeItem('cosmicUser');
-    localStorage.removeItem('cosmicToken');
     
     document.getElementById('guest-buttons').style.display = 'flex';
     document.getElementById('user-menu').style.display = 'none';
     document.getElementById('admin-buttons').style.display = 'none';
     
+    // Очищаем корзину при выходе
+    cart = [];
+    updateCart();
+    
     showNotification('Вы вышли из системы', 'info');
 }
-
 // Показать профиль
 function showProfile() {
     openModal('profile-modal');
@@ -534,22 +554,20 @@ function showProfile() {
 }
 
 // Показать историю заказов
+// Показать историю заказов - ИСПРАВЛЕННАЯ
 async function showOrderHistory() {
+    if (!currentUser) return;
+    
     try {
-        const response = await fetch('/api/user/orders', {
-            headers: {
-                'Authorization': `Bearer ${authToken}`
-            }
-        });
+        const response = await fetch(`/api/user/orders?userId=${currentUser.id}`);
         
         if (response.ok) {
             const orders = await response.json();
-            // Отображение истории заказов в модальном окне
             openModal('history-modal');
             const historyContainer = document.getElementById('history-list');
             historyContainer.innerHTML = '';
             
-            if (orders.length === 0) {
+            if (!orders || orders.length === 0) {
                 historyContainer.innerHTML = '<p>У вас пока нет заказов</p>';
                 return;
             }
@@ -558,109 +576,125 @@ async function showOrderHistory() {
                 const orderElement = document.createElement('div');
                 orderElement.className = 'history-item';
                 orderElement.innerHTML = `
-                    <h4>Заказ #${order.id} от ${new Date(order.created_at).toLocaleDateString()}</h4>
+                    <h4>Заказ #${order.id} (${order.order_number || order.id})</h4>
+                    <p>Дата: ${new Date(order.created_at).toLocaleDateString()}</p>
                     <p>Сумма: ${order.total} ₽</p>
                     <p>Статус: ${order.status}</p>
+                    <p>Товары: ${order.products || 'Нет информации'}</p>
                 `;
                 historyContainer.appendChild(orderElement);
             });
+        } else {
+            throw new Error('Ошибка загрузки истории');
         }
     } catch (error) {
+        console.error('Ошибка истории заказов:', error);
         showNotification('Ошибка при загрузке истории заказов', 'error');
     }
 }
 
 // Обработка заказа - ИСПРАВЛЕННАЯ ВЕРСИЯ
-// ИСПРАВЛЕННЫЙ КОД в handleOrder():
+// Обработка заказа - ИСПРАВЛЕННАЯ ВЕРСИЯ
 async function handleOrder(e) {
-  e.preventDefault();
-  
-  console.log('🛒 Начинаем оформление заказа...');
-  
-  if (!currentUser) {
-    showNotification('Для оформления заказа необходимо войти в систему', 'error');
-    return;
-  }
-  
-  if (cart.length === 0) {
-    showNotification('Корзина пуста! Добавьте товары', 'error');
-    return;
-  }
-  
-  // Получаем данные
-  const name = document.getElementById('name')?.value || currentUser.name;
-  const email = document.getElementById('email')?.value || currentUser.email;
-  const address = document.getElementById('address')?.value || currentUser.address || '';
-  const comments = document.getElementById('comments')?.value || '';
-  
-  // Проверка
-  if (!name || !email || !address) {
-    showNotification('Заполните все обязательные поля!', 'error');
-    return;
-  }
-  
-  // Рассчитываем сумму
-  const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const shipping = 500;
-  const total = subtotal + shipping;
-  
-  console.log('💰 Сумма заказа:', { subtotal, shipping, total });
-  console.log('👤 Баланс пользователя:', currentUser.balance);
-  
-  // Проверка баланса (на клиенте для UX)
-  if (currentUser.balance < total) {
-    const deficit = total - currentUser.balance;
-    showNotification(`Недостаточно средств! Нужно еще ${deficit} ₽`, 'error');
-    return;
-  }
-  
-  // Подготовка данных
-  const orderData = {
-    customer: { name, email, address, comments },
-    items: cart.map(item => ({
-      id: item.id,
-      name: item.name,
-      price: item.price,
-      quantity: item.quantity
-    })),
-    total: total,
-    userId: currentUser.id
-  };
-  
-  try {
-    const response = await fetch('/api/orders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(orderData)
-    });
+    e.preventDefault();
     
-    const result = await response.json();
+    console.log('🛒 Начинаем оформление заказа...');
     
-    if (response.ok && result.success) {
-      // Обновляем баланс пользователя
-      if (result.newBalance !== undefined) {
-        currentUser.balance = result.newBalance;
-        localStorage.setItem('cosmicUser', JSON.stringify(currentUser));
-        updateUIForUser();
-      }
-      
-      // Очищаем корзину
-      cart = [];
-      localStorage.removeItem('cart');
-      updateCart();
-      
-      // Показываем успех
-      showNotification(`Заказ №${result.orderNumber} оформлен! Списано ${total} ₽`, 'success');
-      document.getElementById('order-modal').style.display = 'none';
-      
-    } else {
-      throw new Error(result.error || 'Ошибка сервера');
+    if (!currentUser) {
+        showNotification('Для оформления заказа необходимо войти в систему', 'error');
+        return;
     }
     
-  } catch (error) {
-    console.error('❌ Ошибка заказа:', error);
-    showNotification(error.message, 'error');
-  }
+    if (cart.length === 0) {
+        showNotification('Корзина пуста! Добавьте товары', 'error');
+        return;
+    }
+    
+    // Получаем данные
+    const name = document.getElementById('name')?.value || currentUser.name;
+    const email = document.getElementById('email')?.value || currentUser.email;
+    const address = document.getElementById('address')?.value || currentUser.address || '';
+    const comments = document.getElementById('comments')?.value || '';
+    
+    // Проверка
+    if (!name || !email || !address) {
+        showNotification('Заполните все обязательные поля!', 'error');
+        return;
+    }
+    
+    // Рассчитываем сумму
+    const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const shipping = 500;
+    const total = subtotal + shipping;
+    
+    console.log('💰 Сумма заказа:', { subtotal, shipping, total });
+    console.log('👤 Баланс пользователя:', currentUser.balance);
+    
+    // Проверка баланса (на клиенте для UX)
+    if (currentUser.balance < total) {
+        const deficit = total - currentUser.balance;
+        showNotification(`Недостаточно средств! Нужно еще ${deficit} ₽`, 'error');
+        return;
+    }
+    
+    // Подготовка данных
+    const orderData = {
+        customer: { name, email, address, comments },
+        items: cart.map(item => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity
+        })),
+        total: total,
+        userId: currentUser.id
+    };
+    
+    try {
+        const response = await fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(orderData)
+        });
+        
+        console.log('📥 Статус ответа:', response.status);
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `HTTP ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('✅ Успешный ответ:', result);
+        
+        if (result.success) {
+            // Обновляем баланс пользователя
+            if (result.newBalance !== undefined) {
+                currentUser.balance = result.newBalance;
+                localStorage.setItem('cosmicUser', JSON.stringify(currentUser));
+                updateUIForUser();
+            }
+            
+            // Очищаем корзину
+            cart = [];
+            localStorage.removeItem('cart');
+            updateCart();
+            
+            // Показываем успех
+            showNotification(`Заказ №${result.orderNumber} оформлен! Списано ${total} ₽`, 'success');
+            document.getElementById('order-modal').style.display = 'none';
+            
+            // Сбрасываем форму
+            const orderForm = document.getElementById('order-form');
+            if (orderForm) orderForm.reset();
+        } else {
+            throw new Error(result.error || 'Неизвестная ошибка');
+        }
+        
+    } catch (error) {
+        console.error('❌ Ошибка заказа:', error);
+        showNotification(`Ошибка: ${error.message}`, 'error');
+    }
 }
 // Показать уведомление
 function showNotification(message, type = 'info') {
