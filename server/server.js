@@ -122,7 +122,111 @@ async function initializeDatabase() {
     
     // Заполняем начальные данные
     await seedInitialData();
+    function createDemoOrders(callback) {
+    console.log('📦 Создаю демо-заказы...');
     
+    const demoOrders = [
+        {
+            userId: 2, // test@test.com
+            customerName: 'Тестовый Пользователь',
+            customerEmail: 'test@test.com',
+            customerAddress: 'Марс, база Альфа',
+            products: [
+                { id: 1, name: 'Антигравитацин', price: 2500, quantity: 2 },
+                { id: 4, name: 'Костный регенератор', price: 5400, quantity: 1 }
+            ],
+            total: 10400,
+            status: 'completed'
+        },
+        {
+            userId: 2,
+            customerName: 'Тестовый Пользователь',
+            customerEmail: 'test@test.com',
+            customerAddress: 'Марс, база Альфа',
+            products: [
+                { id: 3, name: 'Генная адаптация Марс', price: 8500, quantity: 1 }
+            ],
+            total: 9000,
+            status: 'delivered'
+        },
+        {
+            userId: 1, // admin
+            customerName: 'Главный Администратор',
+            customerEmail: 'admin@cosmic.pharmacy',
+            customerAddress: 'Орбитальная станция "Мир-2"',
+            products: [
+                { id: 8, name: 'Гиперпространственный адаптоген', price: 9200, quantity: 2 },
+                { id: 5, name: 'Нейростабилизатор', price: 4100, quantity: 1 }
+            ],
+            total: 22500,
+            status: 'processing'
+        }
+    ];
+    
+    let created = 0;
+    
+    demoOrders.forEach((order, index) => {
+        const orderNumber = `ORD-DEMO-${Date.now()}-${index + 1}`;
+        
+        // Создаем заказ
+        db.run(
+            `INSERT INTO orders (order_number, user_id, customer_name, customer_email, 
+             customer_address, subtotal, shipping, total, status, payment_status, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', '-${index} days'))`,
+            [
+                orderNumber,
+                order.userId,
+                order.customerName,
+                order.customerEmail,
+                order.customerAddress,
+                order.total - 500,
+                500,
+                order.total,
+                order.status,
+                'paid'
+            ],
+            function(err) {
+                if (err) {
+                    console.error('Ошибка создания демо-заказа:', err.message);
+                    return;
+                }
+                
+                const orderId = this.lastID;
+                
+                // Добавляем товары
+                order.products.forEach(product => {
+                    db.run(
+                        `INSERT INTO order_items (order_id, product_id, product_name, quantity, unit_price, total_price)
+                         VALUES (?, ?, ?, ?, ?, ?)`,
+                        [orderId, product.id, product.name, product.quantity, product.price, product.price * product.quantity]
+                    );
+                });
+                
+                // Списываем баланс
+                db.run(
+                    'UPDATE users SET balance = balance - ? WHERE id = ?',
+                    [order.total, order.userId]
+                );
+                
+                // Транзакция
+                db.run(
+                    `INSERT INTO transactions (user_id, type, amount, description, order_id)
+                     VALUES (?, ?, ?, ?, ?)`,
+                    [order.userId, 'purchase', order.total, `Демо-заказ #${orderNumber}`, orderId]
+                );
+                
+                created++;
+                if (created === demoOrders.length) {
+                    console.log(`✅ Создано ${demoOrders.length} демо-заказов`);
+                    if (callback) callback();
+                }
+            }
+        );
+    });
+}
+
+// Вызовите эту функцию в seedInitialData() после создания пользователей:
+// createDemoOrders();
     console.log('🎯 Все таблицы созданы успешно!');
     
   } catch (error) {
@@ -777,31 +881,115 @@ app.use((err, req, res, next) => {
     message: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 });
-// Экспорт всех данных в JSON
-app.get('/api/export/all', (req, res) => {
+// ==================== ДЛЯ СТРАНИЦЫ СТАТИСТИКИ ====================
+
+// 1. Полная статистика для дашборда
+app.get('/api/admin/dashboard', (req, res) => {
     db.serialize(() => {
-        const data = {};
+        const dashboardData = {};
         
-        db.all('SELECT * FROM users', [], (err, users) => {
-            data.users = users;
+        // 1. Базовая статистика
+        db.all(`
+            SELECT 
+                (SELECT COUNT(*) FROM users) as total_users,
+                (SELECT COUNT(*) FROM orders) as total_orders,
+                (SELECT IFNULL(SUM(total), 0) FROM orders) as total_revenue,
+                (SELECT COUNT(*) FROM products) as total_products,
+                (SELECT IFNULL(AVG(total), 0) FROM orders) as avg_order_value
+        `, [], (err, stats) => {
+            if (stats && stats.length > 0) {
+                dashboardData.statistics = stats[0];
+            }
             
-            db.all('SELECT * FROM orders', [], (err, orders) => {
-                data.orders = orders;
+            // 2. Последние 10 заказов
+            db.all(`
+                SELECT o.*, u.email, u.name as user_name
+                FROM orders o
+                LEFT JOIN users u ON o.user_id = u.id
+                ORDER BY o.created_at DESC
+                LIMIT 10
+            `, [], (err, recentOrders) => {
+                dashboardData.recentOrders = recentOrders || [];
                 
-                db.all('SELECT * FROM order_items', [], (err, items) => {
-                    data.order_items = items;
+                // 3. Топ товаров
+                db.all(`
+                    SELECT 
+                        p.name,
+                        SUM(oi.quantity) as total_sold,
+                        SUM(oi.total_price) as total_revenue
+                    FROM order_items oi
+                    JOIN products p ON oi.product_id = p.id
+                    GROUP BY p.id
+                    ORDER BY total_sold DESC
+                    LIMIT 5
+                `, [], (err, popularProducts) => {
+                    dashboardData.popularProducts = popularProducts || [];
                     
-                    db.all('SELECT * FROM transactions', [], (err, transactions) => {
-                        data.transactions = transactions;
+                    // 4. Статусы заказов
+                    db.all(`
+                        SELECT 
+                            status,
+                            COUNT(*) as count,
+                            SUM(total) as revenue
+                        FROM orders
+                        GROUP BY status
+                    `, [], (err, orderStatuses) => {
+                        dashboardData.orderStatuses = orderStatuses || [];
                         
-                        // Отправляем как файл для скачивания
-                        res.setHeader('Content-Type', 'application/json');
-                        res.setHeader('Content-Disposition', 'attachment; filename="cosmic_backup.json"');
-                        res.json(data);
+                        res.json({
+                            success: true,
+                            timestamp: new Date().toISOString(),
+                            ...dashboardData
+                        });
                     });
                 });
             });
         });
+    });
+});
+
+// 2. Простой API для получения всех данных таблиц
+app.get('/api/admin/tables', (req, res) => {
+    const tables = ['users', 'orders', 'products', 'order_items', 'transactions'];
+    const result = {};
+    let processed = 0;
+    
+    tables.forEach(table => {
+        db.all(`SELECT * FROM ${table} LIMIT 50`, [], (err, rows) => {
+            result[table] = rows || [];
+            processed++;
+            
+            if (processed === tables.length) {
+                res.json({
+                    success: true,
+                    tables: result
+                });
+            }
+        });
+    });
+});
+
+// 3. Очистка тестовых данных (только для демо)
+app.post('/api/admin/reset-demo', (req, res) => {
+    // Удаляем все заказы и транзакции, оставляя пользователей и товары
+    db.serialize(() => {
+        db.run('DELETE FROM transactions');
+        db.run('DELETE FROM order_items');
+        db.run('DELETE FROM orders');
+        
+        // Восстанавливаем начальный баланс
+        db.run('UPDATE users SET balance = 100000 WHERE email = "admin@cosmic.pharmacy"');
+        db.run('UPDATE users SET balance = 5000 WHERE email = "test@test.com"');
+        
+        // Создаем новые демо-заказы
+        setTimeout(() => {
+            createDemoOrders(() => {
+                res.json({
+                    success: true,
+                    message: 'Демо-данные сброшены и созданы заново'
+                });
+            });
+        }, 1000);
     });
 });
 // ==================== ЗАПУСК СЕРВЕРА ====================
