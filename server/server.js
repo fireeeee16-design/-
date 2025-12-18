@@ -1,4 +1,4 @@
-// Космическая аптека - полный сервер с улучшенной БД
+// Космическая аптека - полный сервер с улучшенной БД и балансом
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
@@ -13,18 +13,18 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
-// База данных с лучшей обработкой ошибок
+// База данных
 const db = new sqlite3.Database('./cosmic_pharmacy.db', (err) => {
   if (err) {
     console.error('❌ Ошибка подключения к БД:', err.message);
   } else {
     console.log('✅ База данных подключена');
-    db.run('PRAGMA foreign_keys = ON'); // Включаем внешние ключи
+    db.run('PRAGMA foreign_keys = ON');
     initializeDatabase();
   }
 });
 
-// ==================== УЛУЧШЕННАЯ СТРУКТУРА БАЗЫ ДАННЫХ ====================
+// ==================== ИНИЦИАЛИЗАЦИЯ БАЗЫ ДАННЫХ ====================
 
 async function initializeDatabase() {
   try {
@@ -43,7 +43,7 @@ async function initializeDatabase() {
       )
     `, 'users');
     
-    // 2. Таблица категорий товаров
+    // 2. Таблица категорий
     await runQuery(`
       CREATE TABLE IF NOT EXISTS categories (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -104,12 +104,12 @@ async function initializeDatabase() {
       )
     `, 'order_items');
     
-    // 6. Таблица транзакций (для списаний/пополнений)
+    // 6. Таблица транзакций
     await runQuery(`
       CREATE TABLE IF NOT EXISTS transactions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
-        type TEXT NOT NULL, -- 'purchase', 'topup', 'refund'
+        type TEXT NOT NULL,
         amount DECIMAL(10, 2) NOT NULL,
         description TEXT,
         order_id INTEGER,
@@ -131,7 +131,7 @@ async function initializeDatabase() {
   }
 }
 
-// Вспомогательная функция для выполнения запросов
+// Вспомогательная функция
 function runQuery(sql, tableName) {
   return new Promise((resolve, reject) => {
     db.run(sql, (err) => {
@@ -196,7 +196,6 @@ async function seedInitialData() {
 // Заполнение товаров
 async function seedProducts() {
   const products = [
-    // id, name, category_id, price, description, image_url, stock
     ['Антигравитацин', 2, 2500, 'Повышает энергетический уровень в условиях невесомости', 'imeges/Антигравитацин.png', 100],
     ['Радиозащитный гель', 1, 3200, 'Защищает от космической радиации, повышает иммунитет', 'imeges/Радиозащитный гель.png', 50],
     ['Генная адаптация Марс', 3, 8500, 'Подготовка организма к жизни в условиях Марса', 'imeges/Генная адаптация Марс.png', 30],
@@ -229,7 +228,7 @@ async function seedProducts() {
   });
 }
 
-// ==================== КРИТИЧЕСКИЕ API ДЛЯ КЛИЕНТА ====================
+// ==================== ОСНОВНЫЕ API МАРШРУТЫ ====================
 
 // 1. Регистрация пользователя
 app.post('/api/register', (req, res) => {
@@ -365,9 +364,210 @@ app.get('/api/products', (req, res) => {
   });
 });
 
-// 4. Получение всех заказов (для отладки)
+// 4. КРИТИЧЕСКИЙ МАРШРУТ: Оформление заказа с проверкой баланса
+app.post('/api/orders', (req, res) => {
+  console.log('🛒 Получен запрос на оформление заказа');
+  
+  const { customer, items, total, userId } = req.body;
+  
+  // Валидация данных
+  if (!customer || !items || !total || !userId) {
+    console.error('❌ Неполные данные заказа');
+    return res.status(400).json({
+      success: false,
+      error: 'Неполные данные заказа'
+    });
+  }
+  
+  if (items.length === 0) {
+    console.error('❌ Пустой заказ');
+    return res.status(400).json({
+      success: false,
+      error: 'Корзина пуста'
+    });
+  }
+  
+  // Проверяем наличие пользователя и баланса
+  db.get('SELECT id, balance, name, email, address FROM users WHERE id = ?', [userId], (err, user) => {
+    if (err) {
+      console.error('❌ Ошибка проверки пользователя:', err.message);
+      return res.status(500).json({
+        success: false,
+        error: 'Ошибка сервера при проверке пользователя'
+      });
+    }
+    
+    if (!user) {
+      console.error('❌ Пользователь не найден:', userId);
+      return res.status(404).json({
+        success: false,
+        error: 'Пользователь не найден'
+      });
+    }
+    
+    // Проверяем баланс
+    if (user.balance < total) {
+      console.error(`❌ Недостаточно средств: баланс ${user.balance}, нужно ${total}`);
+      return res.status(400).json({
+        success: false,
+        error: `Недостаточно средств. Баланс: ${user.balance} ₽, нужно: ${total} ₽`
+      });
+    }
+    
+    // Начинаем транзакцию
+    db.serialize(() => {
+      db.run('BEGIN TRANSACTION');
+      
+      // Генерируем номер заказа
+      const orderNumber = 'ORD-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+      
+      // Вставляем заказ
+      db.run(
+        `INSERT INTO orders (
+          order_number, user_id, customer_name, customer_email, 
+          customer_address, subtotal, shipping, total, status, 
+          payment_status, comments
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          orderNumber,
+          userId,
+          customer.name || user.name,
+          customer.email || user.email,
+          customer.address || user.address || '',
+          total - 500, // subtotal
+          500, // shipping
+          total,
+          'new',
+          'paid',
+          customer.comments || ''
+        ],
+        function(orderErr) {
+          if (orderErr) {
+            console.error('❌ Ошибка создания заказа:', orderErr.message);
+            db.run('ROLLBACK');
+            return res.status(500).json({
+              success: false,
+              error: 'Ошибка создания заказа'
+            });
+          }
+          
+          const orderId = this.lastID;
+          console.log(`✅ Заказ создан: #${orderNumber}, ID: ${orderId}`);
+          
+          // Добавляем товары заказа
+          let itemsProcessed = 0;
+          items.forEach(item => {
+            db.run(
+              `INSERT INTO order_items (
+                order_id, product_id, product_name, 
+                quantity, unit_price, total_price
+              ) VALUES (?, ?, ?, ?, ?, ?)`,
+              [
+                orderId,
+                item.id,
+                item.name,
+                item.quantity,
+                item.price,
+                item.price * item.quantity
+              ],
+              (itemErr) => {
+                if (itemErr) {
+                  console.error('❌ Ошибка добавления товара:', itemErr.message);
+                  db.run('ROLLBACK');
+                  return res.status(500).json({
+                    success: false,
+                    error: 'Ошибка добавления товаров в заказ'
+                  });
+                }
+                
+                itemsProcessed++;
+                
+                // Когда все товары добавлены
+                if (itemsProcessed === items.length) {
+                  // Списываем средства с баланса
+                  const newBalance = user.balance - total;
+                  
+                  db.run(
+                    'UPDATE users SET balance = ? WHERE id = ?',
+                    [newBalance, userId],
+                    (balanceErr) => {
+                      if (balanceErr) {
+                        console.error('❌ Ошибка списания средств:', balanceErr.message);
+                        db.run('ROLLBACK');
+                        return res.status(500).json({
+                          success: false,
+                          error: 'Ошибка списания средств'
+                        });
+                      }
+                      
+                      // Записываем транзакцию
+                      db.run(
+                        `INSERT INTO transactions (
+                          user_id, type, amount, description, 
+                          order_id, previous_balance, new_balance
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                        [
+                          userId,
+                          'purchase',
+                          total,
+                          `Оплата заказа #${orderNumber}`,
+                          orderId,
+                          user.balance,
+                          newBalance
+                        ],
+                        (transactionErr) => {
+                          if (transactionErr) {
+                            console.error('❌ Ошибка записи транзакции:', transactionErr.message);
+                            db.run('ROLLBACK');
+                            return res.status(500).json({
+                              success: false,
+                              error: 'Ошибка записи транзакции'
+                            });
+                          }
+                          
+                          // Фиксируем транзакцию
+                          db.run('COMMIT', (commitErr) => {
+                            if (commitErr) {
+                              console.error('❌ Ошибка коммита транзакции:', commitErr.message);
+                              return res.status(500).json({
+                                success: false,
+                                error: 'Ошибка завершения операции'
+                              });
+                            }
+                            
+                            console.log(`✅ Заказ #${orderNumber} успешно оформлен!`);
+                            console.log(`💰 Списано: ${total} ₽, Новый баланс: ${newBalance} ₽`);
+                            
+                            res.json({
+                              success: true,
+                              orderNumber: orderNumber,
+                              orderId: orderId,
+                              newBalance: newBalance,
+                              message: `Заказ #${orderNumber} успешно оформлен!`
+                            });
+                          });
+                        }
+                      );
+                    }
+                  );
+                }
+              }
+            );
+          });
+        }
+      );
+    });
+  });
+});
+
+// 5. Получение всех заказов (для отладки)
 app.get('/api/orders', (req, res) => {
-  db.all('SELECT * FROM orders ORDER BY created_at DESC', [], (err, rows) => {
+  db.all(`
+    SELECT o.*, u.name as user_name, u.email as user_email 
+    FROM orders o 
+    LEFT JOIN users u ON o.user_id = u.id 
+    ORDER BY o.created_at DESC
+  `, [], (err, rows) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
@@ -375,7 +575,7 @@ app.get('/api/orders', (req, res) => {
   });
 });
 
-// 5. Заказы пользователя
+// 6. Заказы пользователя
 app.get('/api/user/orders', (req, res) => {
   const userId = req.query.userId;
   
@@ -402,19 +602,119 @@ app.get('/api/user/orders', (req, res) => {
   );
 });
 
-// 6. Оформление заказа с проверкой баланса (существующий)
-// [Ваш существующий код здесь]
+// 7. Баланс пользователя
+app.get('/api/user/balance/:userId', (req, res) => {
+  const userId = req.params.userId;
+  
+  db.get('SELECT id, name, email, balance FROM users WHERE id = ?', [userId], (err, user) => {
+    if (err) {
+      console.error('❌ Ошибка получения баланса:', err.message);
+      return res.status(500).json({ 
+        success: false,
+        error: 'Ошибка сервера' 
+      });
+    }
+    
+    if (!user) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Пользователь не найден' 
+      });
+    }
+    
+    res.json({
+      success: true,
+      user: user
+    });
+  });
+});
 
-// 7. API для получения баланса пользователя (существующий)
-// [Ваш существующий код здесь]
+// 8. Пополнение баланса
+app.post('/api/user/topup', (req, res) => {
+  const { userId, amount } = req.body;
+  
+  if (!userId || !amount || amount <= 0) {
+    return res.status(400).json({
+      success: false,
+      error: 'Некорректные данные'
+    });
+  }
+  
+  db.get('SELECT balance FROM users WHERE id = ?', [userId], (err, user) => {
+    if (err) {
+      return res.status(500).json({
+        success: false,
+        error: 'Ошибка сервера'
+      });
+    }
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'Пользователь не найден'
+      });
+    }
+    
+    const newBalance = user.balance + parseFloat(amount);
+    
+    db.run(
+      'UPDATE users SET balance = ? WHERE id = ?',
+      [newBalance, userId],
+      function(updateErr) {
+        if (updateErr) {
+          return res.status(500).json({
+            success: false,
+            error: 'Ошибка обновления баланса'
+          });
+        }
+        
+        // Записываем транзакцию
+        db.run(
+          `INSERT INTO transactions (
+            user_id, type, amount, description, 
+            previous_balance, new_balance
+          ) VALUES (?, ?, ?, ?, ?, ?)`,
+          [userId, 'topup', amount, 'Пополнение баланса', user.balance, newBalance],
+          (transactionErr) => {
+            if (transactionErr) {
+              console.error('Ошибка записи транзакции:', transactionErr.message);
+            }
+            
+            res.json({
+              success: true,
+              newBalance: newBalance,
+              message: `Баланс пополнен на ${amount} ₽`
+            });
+          }
+        );
+      }
+    );
+  });
+});
 
-// 8. API для пополнения баланса (существующий)
-// [Ваш существующий код здесь]
+// 9. История транзакций пользователя
+app.get('/api/user/transactions/:userId', (req, res) => {
+  const userId = req.params.userId;
+  
+  db.all(
+    `SELECT t.*, o.order_number 
+     FROM transactions t
+     LEFT JOIN orders o ON t.order_id = o.id
+     WHERE t.user_id = ?
+     ORDER BY t.created_at DESC
+     LIMIT 50`,
+    [userId],
+    (err, rows) => {
+      if (err) {
+        console.error('❌ Ошибка получения транзакций:', err.message);
+        return res.status(500).json({ error: 'Ошибка сервера' });
+      }
+      res.json(rows);
+    }
+  );
+});
 
-// 9. История транзакций пользователя (существующий)
-// [Ваш существующий код здесь]
-
-// ==================== ТЕСТОВЫЕ И ОТЛАДОЧНЫЕ API ====================
+// ==================== ТЕСТОВЫЕ МАРШРУТЫ ====================
 
 // Тестовый маршрут
 app.get('/api/test', (req, res) => {
@@ -431,63 +731,12 @@ app.get('/api/test', (req, res) => {
       'GET  /api/user/orders - заказы пользователя',
       'GET  /api/user/balance/:userId - баланс',
       'POST /api/user/topup - пополнение баланса',
-      'GET  /api/user/transactions/:userId - транзакции',
-      'GET  /api/test - проверка работы'
+      'GET  /api/user/transactions/:userId - транзакции'
     ]
   });
 });
 
-// Проверка структуры таблиц
-app.get('/api/debug/tables', (req, res) => {
-  db.all(
-    "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name",
-    [],
-    (err, tables) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      
-      const tableInfo = [];
-      let processed = 0;
-      
-      tables.forEach(table => {
-        db.all(`PRAGMA table_info(${table.name})`, [], (err, columns) => {
-          tableInfo.push({
-            table: table.name,
-            columns: columns
-          });
-          
-          processed++;
-          if (processed === tables.length) {
-            res.json(tableInfo);
-          }
-        });
-      });
-    }
-  );
-});
-
-// Проверка пользователей
-app.get('/api/debug/users', (req, res) => {
-  db.all('SELECT id, email, name, balance FROM users', [], (err, users) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    res.json(users);
-  });
-});
-
-// Проверка товаров
-app.get('/api/debug/products', (req, res) => {
-  db.all('SELECT * FROM products', [], (err, products) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    res.json(products);
-  });
-});
-
-// Проверка подключения
+// Проверка здоровья сервера
 app.get('/api/health', (req, res) => {
   db.get('SELECT 1 as test', (err) => {
     if (err) {
@@ -550,9 +799,8 @@ app.listen(PORT, () => {
   console.log(`📡 Отладка:`);
   console.log(`   GET  /api/test - проверка работы`);
   console.log(`   GET  /api/health - статус сервера`);
-  console.log(`   GET  /api/debug/* - отладка базы`);
   console.log(`=======================================`);
   console.log(`🌐 Доступно по адресу: http://localhost:${PORT}`);
-  console.log(`💡 Совет: Используйте эти учетные записи для тестирования`);
+  console.log(`💡 Тестируйте заказы с пользователем test@test.com / 123`);
   console.log(`=======================================`);
 });
