@@ -190,6 +190,94 @@ async function seedInitialData() {
   });
 }
 
+// ==================== ОСНОВНЫЕ API МАРШРУТЫ ====================
+
+// Регистрация
+app.post('/api/register', (req, res) => {
+  const { email, password, name, address } = req.body;
+  
+  if (!email || !password || !name) {
+    return res.status(400).json({ error: 'Заполните email, пароль и имя' });
+  }
+  
+  db.get('SELECT id FROM users WHERE email = ?', [email], (err, row) => {
+    if (err) {
+      console.error('❌ Ошибка БД при регистрации:', err.message);
+      return res.status(500).json({ error: 'Ошибка сервера' });
+    }
+    
+    if (row) {
+      return res.status(400).json({ error: 'Email уже используется' });
+    }
+    
+    db.run(
+      'INSERT INTO users (email, password, name, address) VALUES (?, ?, ?, ?)',
+      [email, password, name, address || ''],
+      function(err) {
+        if (err) {
+          console.error('❌ Ошибка создания пользователя:', err.message);
+          return res.status(500).json({ error: 'Ошибка сервера' });
+        }
+        
+        console.log('✅ Новый пользователь:', email);
+        
+        // Возвращаем пользователя с балансом 0
+        res.json({
+          success: true,
+          user: {
+            id: this.lastID,
+            email: email,
+            name: name,
+            address: address || '',
+            role: 'user',
+            balance: 0
+          }
+        });
+      }
+    );
+  });
+});
+
+// Вход
+app.post('/api/login', (req, res) => {
+  const { email, password } = req.body;
+  
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Заполните email и пароль' });
+  }
+  
+  db.get(
+    `SELECT id, email, password, name, address, role, balance 
+     FROM users WHERE email = ?`,
+    [email],
+    (err, user) => {
+      if (err) {
+        console.error('❌ Ошибка БД при входе:', err.message);
+        return res.status(500).json({ error: 'Ошибка сервера' });
+      }
+      
+      if (!user) {
+        return res.status(401).json({ error: 'Пользователь не найден' });
+      }
+      
+      // Проверяем пароль
+      if (user.password !== password) {
+        return res.status(401).json({ error: 'Неверный пароль' });
+      }
+      
+      console.log('✅ Успешный вход:', email);
+      
+      // Убираем пароль из ответа
+      const { password: _, ...userWithoutPassword } = user;
+      
+      res.json({
+        success: true,
+        user: userWithoutPassword
+      });
+    }
+  );
+});
+
 // ==================== API С СПИСАНИЕМ БАЛАНСА ====================
 
 // Оформление заказа с проверкой баланса
@@ -454,6 +542,8 @@ function getUser(userId) {
   });
 }
 
+// ==================== API БАЛАНСА И ТРАНЗАКЦИЙ ====================
+
 // API для получения баланса пользователя
 app.get('/api/user/balance/:userId', (req, res) => {
   const userId = req.params.userId;
@@ -626,22 +716,124 @@ app.get('/api/user/transactions/:userId', (req, res) => {
 
 // ==================== ДОПОЛНИТЕЛЬНЫЕ API ====================
 
-// [Здесь остальные API из предыдущей версии: /api/register, /api/login, /api/orders (GET), /api/test, /api/debug/tables и т.д.]
-// Не забудьте скопировать их из предыдущего кода
+// Получение всех заказов
+app.get('/api/orders', (req, res) => {
+  db.all('SELECT * FROM orders ORDER BY created_at DESC', [], (err, rows) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(rows);
+  });
+});
 
-// ... [Остальной код остается без изменений] ...
+// Заказы пользователя
+app.get('/api/user/orders', (req, res) => {
+  const userId = req.query.userId;
+  
+  if (!userId) {
+    return res.status(400).json({ error: 'Не указан ID пользователя' });
+  }
+  
+  db.all(
+    `SELECT o.*, 
+            GROUP_CONCAT(oi.product_name || ' (x' || oi.quantity || ')') as products
+     FROM orders o
+     LEFT JOIN order_items oi ON o.id = oi.order_id
+     WHERE o.user_id = ?
+     GROUP BY o.id
+     ORDER BY o.created_at DESC`,
+    [userId],
+    (err, rows) => {
+      if (err) {
+        console.error('Ошибка при получении заказов:', err.message);
+        return res.status(500).json({ error: 'Ошибка сервера' });
+      }
+      res.json(rows);
+    }
+  );
+});
 
-// Запуск сервера
+// Тестовый маршрут
+app.get('/api/test', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    message: 'Сервер космической аптеки работает!',
+    endpoints: [
+      'POST /api/register - регистрация',
+      'POST /api/login - вход', 
+      'POST /api/orders - оформление заказа с балансом',
+      'GET /api/orders - все заказы',
+      'GET /api/user/orders - заказы пользователя',
+      'GET /api/user/balance/:userId - баланс',
+      'POST /api/user/topup - пополнение баланса',
+      'GET /api/user/transactions/:userId - транзакции',
+      'GET /api/test - проверка работы'
+    ]
+  });
+});
+
+// Проверка структуры таблиц
+app.get('/api/debug/tables', (req, res) => {
+  db.all(
+    "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name",
+    [],
+    (err, tables) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      
+      const tableInfo = [];
+      let processed = 0;
+      
+      tables.forEach(table => {
+        db.all(`PRAGMA table_info(${table.name})`, [], (err, columns) => {
+          tableInfo.push({
+            table: table.name,
+            columns: columns
+          });
+          
+          processed++;
+          if (processed === tables.length) {
+            res.json(tableInfo);
+          }
+        });
+      });
+    }
+  );
+});
+
+// Проверка структуры таблицы orders
+app.get('/api/debug/orders-structure', (req, res) => {
+  db.all("PRAGMA table_info(orders)", [], (err, columns) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({
+      table: 'orders',
+      columns: columns,
+      columnNames: columns.map(col => col.name)
+    });
+  });
+});
+
+// ==================== ЗАПУСК СЕРВЕРА ====================
+
 app.listen(PORT, () => {
   console.log(`=======================================`);
   console.log(`🚀 Сервер космической аптеки запущен!`);
   console.log(`📍 Порт: ${PORT}`);
   console.log(`📊 База данных: cosmic_pharmacy.db`);
   console.log(`💰 Система баланса: АКТИВНА`);
+  console.log(`👥 Пользователи по умолчанию:`);
+  console.log(`   admin@cosmic.pharmacy / admin123 (100,000 ₽)`);
+  console.log(`   test@test.com / 123 (5,000 ₽)`);
   console.log(`📋 Доступные API:`);
+  console.log(`   POST /api/register - регистрация`);
+  console.log(`   POST /api/login - вход`);
   console.log(`   POST /api/orders - оформление с списанием баланса`);
   console.log(`   GET  /api/user/balance/:userId - баланс пользователя`);
   console.log(`   POST /api/user/topup - пополнение баланса`);
   console.log(`   GET  /api/user/transactions/:userId - история транзакций`);
+  console.log(`   GET  /api/test - проверка работы`);
   console.log(`=======================================`);
 });
