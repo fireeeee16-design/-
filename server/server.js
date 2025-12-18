@@ -777,22 +777,32 @@ app.use((err, req, res, next) => {
     message: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 });
-// server.js (добавьте перед обработчиками ошибок)
-
-// API для получения всех пользователей (админ)
-app.get('/api/admin/users', (req, res) => {
-  db.all(
-    `SELECT id, email, name, address, role, balance, created_at 
-     FROM users ORDER BY created_at DESC`,
-    [],
-    (err, rows) => {
-      if (err) {
-        console.error('❌ Ошибка получения пользователей:', err.message);
-        return res.status(500).json({ error: 'Ошибка сервера' });
-      }
-      res.json(rows);
-    }
-  );
+// Экспорт всех данных в JSON
+app.get('/api/export/all', (req, res) => {
+    db.serialize(() => {
+        const data = {};
+        
+        db.all('SELECT * FROM users', [], (err, users) => {
+            data.users = users;
+            
+            db.all('SELECT * FROM orders', [], (err, orders) => {
+                data.orders = orders;
+                
+                db.all('SELECT * FROM order_items', [], (err, items) => {
+                    data.order_items = items;
+                    
+                    db.all('SELECT * FROM transactions', [], (err, transactions) => {
+                        data.transactions = transactions;
+                        
+                        // Отправляем как файл для скачивания
+                        res.setHeader('Content-Type', 'application/json');
+                        res.setHeader('Content-Disposition', 'attachment; filename="cosmic_backup.json"');
+                        res.json(data);
+                    });
+                });
+            });
+        });
+    });
 });
 // ==================== ЗАПУСК СЕРВЕРА ====================
 

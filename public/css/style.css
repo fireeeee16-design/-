@@ -16,6 +16,4 @@
 @import url('components/admin.css');
 
 /* Адаптивность */
-@import url('adaptation/base.css');
-@import url('adaptation/components.css');
-@import url('adaptation/responsive.css');
+@import url('responsive.css');
