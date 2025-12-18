@@ -1,4 +1,3 @@
-// Космическая аптека - полный сервер с улучшенной БД и балансом
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');

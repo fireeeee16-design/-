@@ -23,7 +23,7 @@
                     <li><a href="#about">О нас</a></li>
                     <li><a href="#cart">Корзина <span id="cart-count">0</span></a></li>
                 </ul>
-                <div class="auth-buttons">
+<div class="auth-buttons">
     <!-- До входа -->
     <div id="guest-buttons">
         <button id="login-btn">Вход</button>
@@ -37,11 +37,12 @@
             <span id="user-name"></span>
         </button>
         <span class="user-balance" id="user-balance">0 ₽</span>
+        <!-- Кнопка пополнения будет добавлена скриптом -->
         <button id="logout-btn" class="logout-btn">Выйти</button>
         
         <div id="admin-buttons" style="display: none;">
-            <button id="admin-panel-btn">Админ</button>
-            <button id="manage-products-btn">Товары</button>
+            <button id="admin-panel-btn"><i class="fas fa-cogs"></i> Админ</button>
+            <button id="manage-products-btn"><i class="fas fa-pills"></i> Товары</button>
         </div>
     </div>
 </div>
@@ -299,40 +300,160 @@
         </div>
     </div>
 </div>
+<!-- Добавить перед закрывающим тегом body -->
+
 <!-- Модальное окно пополнения баланса -->
 <div id="topup-modal" class="modal">
-  <div class="modal-content">
-    <span class="close-modal">&times;</span>
-    <h2>Пополнение баланса</h2>
-    
-    <div class="balance-info">
-      <p>Текущий баланс: <strong id="current-balance">0 ₽</strong></p>
-    </div>
-    
-    <form id="topup-form">
-      <div class="form-group">
-        <label for="topup-amount">Сумма пополнения (₽)</label>
-        <input type="number" id="topup-amount" min="100" max="100000" step="100" required>
-        <div class="amount-suggestions">
-          <button type="button" class="amount-btn" data-amount="500">500 ₽</button>
-          <button type="button" class="amount-btn" data-amount="1000">1 000 ₽</button>
-          <button type="button" class="amount-btn" data-amount="5000">5 000 ₽</button>
-          <button type="button" class="amount-btn" data-amount="10000">10 000 ₽</button>
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2>Пополнение баланса</h2>
+        
+        <div class="balance-info">
+            <p>Текущий баланс: <strong id="current-balance">0 ₽</strong></p>
         </div>
-      </div>
-      
-      <div class="form-group">
-        <label for="payment-method">Способ оплаты</label>
-        <select id="payment-method">
-          <option value="card">Банковская карта</option>
-          <option value="crypto">Космические крипто-кредиты</option>
-          <option value="transfer">Межгалактический перевод</option>
-        </select>
-      </div>
-      
-      <button type="submit" class="submit-btn">Пополнить баланс</button>
-    </form>
-  </div>
+        
+        <form id="topup-form">
+            <div class="form-group">
+                <label for="topup-amount">Сумма пополнения (₽)</label>
+                <input type="number" id="topup-amount" min="100" max="100000" step="100" required>
+                <div class="amount-suggestions">
+                    <button type="button" class="amount-btn" data-amount="500">500 ₽</button>
+                    <button type="button" class="amount-btn" data-amount="1000">1 000 ₽</button>
+                    <button type="button" class="amount-btn" data-amount="5000">5 000 ₽</button>
+                    <button type="button" class="amount-btn" data-amount="10000">10 000 ₽</button>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="payment-method">Способ оплаты</label>
+                <select id="payment-method">
+                    <option value="card">Банковская карта</option>
+                    <option value="crypto">Космические крипто-кредиты</option>
+                    <option value="transfer">Межгалактический перевод</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="submit-btn">Пополнить баланс</button>
+        </form>
+    </div>
+</div>
+
+<!-- Расширенное модальное окно админ-панели -->
+<div id="admin-modal" class="modal">
+    <div class="modal-content wide-modal">
+        <span class="close-modal">&times;</span>
+        <h2>Админ-панель</h2>
+        
+        <div class="admin-tabs">
+            <button class="tab-btn active" data-tab="stats">Статистика</button>
+            <button class="tab-btn" data-tab="users">Пользователи</button>
+            <button class="tab-btn" data-tab="orders">Заказы</button>
+            <button class="tab-btn" data-tab="transactions">Транзакции</button>
+        </div>
+        
+        <div class="tab-content active" id="stats-tab">
+            <div class="admin-stats">
+                <div class="stat-card">
+                    <h3>Пользователи</h3>
+                    <p id="total-users">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Заказы</h3>
+                    <p id="total-orders">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Выручка</h3>
+                    <p id="total-revenue">0 ₽</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Товары</h3>
+                    <p id="total-products">0</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="users-tab">
+            <div id="users-list">
+                <!-- Список пользователей -->
+            </div>
+        </div>
+        
+        <div class="tab-content" id="orders-tab">
+            <div id="orders-list">
+                <!-- Список заказов -->
+            </div>
+        </div>
+        
+        <div class="tab-content" id="transactions-tab">
+            <div id="transactions-list">
+                <!-- Список транзакций -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно управления товарами -->
+<div id="products-modal" class="modal">
+    <div class="modal-content wide-modal">
+        <span class="close-modal">&times;</span>
+        <h2>Управление товарами</h2>
+        
+        <button class="cta-button" id="add-product-btn">Добавить товар</button>
+        
+        <div id="admin-products-list">
+            <!-- Таблица товаров -->
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно редактирования товара -->
+<div id="edit-product-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2 id="edit-product-title">Редактировать товар</h2>
+        
+        <form id="edit-product-form">
+            <input type="hidden" id="product-id">
+            
+            <div class="form-group">
+                <label for="product-name">Название *</label>
+                <input type="text" id="product-name" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="product-category">Категория *</label>
+                <select id="product-category" required>
+                    <option value="">Выберите категорию</option>
+                    <option value="1">Иммунитет</option>
+                    <option value="2">Энергия</option>
+                    <option value="3">Адаптация</option>
+                    <option value="4">Восстановление</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="product-price">Цена (₽) *</label>
+                <input type="number" id="product-price" min="0" step="100" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="product-stock">Остаток на складе</label>
+                <input type="number" id="product-stock" min="0" value="100">
+            </div>
+            
+            <div class="form-group">
+                <label for="product-description">Описание</label>
+                <textarea id="product-description" rows="4"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="product-image">URL изображения</label>
+                <input type="text" id="product-image">
+            </div>
+            
+            <button type="submit" class="submit-btn">Сохранить</button>
+        </form>
+    </div>
 </div>
 
     <script src="script.js"></script>

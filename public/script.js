@@ -1,5 +1,3 @@
-// Космическая аптека - клиентский код
-
 // Данные о продуктах
 const products = [
     {
@@ -689,4 +687,365 @@ function showNotification(message, type = 'info') {
     setTimeout(() => {
         notification.style.display = 'none';
     }, 3000);
+}
+// script.js (добавить после существующих функций)
+
+// ============ ФУНКЦИИ ДЛЯ БАЛАНСА ============
+
+// Открытие модального окна пополнения баланса
+function openTopupModal() {
+    if (!currentUser) {
+        showNotification('Для пополнения баланса необходимо войти в систему', 'error');
+        return;
+    }
+    
+    document.getElementById('current-balance').textContent = `${currentUser.balance || 0} ₽`;
+    openModal('topup-modal');
+    
+    // Обработчики для кнопок быстрого выбора суммы
+    document.querySelectorAll('.amount-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.getElementById('topup-amount').value = this.dataset.amount;
+        });
+    });
+}
+
+// Обработка пополнения баланса
+async function handleTopup(e) {
+    e.preventDefault();
+    
+    const amount = parseInt(document.getElementById('topup-amount').value);
+    const method = document.getElementById('payment-method').value;
+    
+    if (!amount || amount < 100) {
+        showNotification('Минимальная сумма пополнения: 100 ₽', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/user/topup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                userId: currentUser.id, 
+                amount: amount 
+            })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            
+            // Обновляем баланс в локальном хранилище
+            currentUser.balance = result.newBalance;
+            localStorage.setItem('cosmicUser', JSON.stringify(currentUser));
+            updateUIForUser();
+            
+            showNotification(result.message || `Баланс пополнен на ${amount} ₽`, 'success');
+            document.getElementById('topup-modal').style.display = 'none';
+            document.getElementById('topup-form').reset();
+        } else {
+            const error = await response.json();
+            throw new Error(error.error || 'Ошибка пополнения');
+        }
+    } catch (error) {
+        console.error('Ошибка пополнения баланса:', error);
+        showNotification(`Ошибка: ${error.message}`, 'error');
+    }
+}
+
+// ============ АДМИН-ФУНКЦИИ ============
+
+// Открытие админ-панели
+async function openAdminPanel() {
+    if (!currentUser || currentUser.role !== 'admin') {
+        showNotification('Доступ запрещен', 'error');
+        return;
+    }
+    
+    openModal('admin-modal');
+    loadAdminStats();
+    loadAllOrders();
+    loadAllUsers();
+}
+
+// Загрузка статистики для админа
+async function loadAdminStats() {
+    try {
+        const [ordersResponse, usersResponse] = await Promise.all([
+            fetch('/api/orders'),
+            fetch('/api/admin/users')
+        ]);
+        
+        if (ordersResponse.ok && usersResponse.ok) {
+            const orders = await ordersResponse.json();
+            const users = await usersResponse.json();
+            
+            // Рассчитываем статистику
+            const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
+            
+            document.getElementById('total-users').textContent = users.length;
+            document.getElementById('total-orders').textContent = orders.length;
+            document.getElementById('total-revenue').textContent = `${totalRevenue} ₽`;
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки статистики:', error);
+    }
+}
+
+// Загрузка всех пользователей
+async function loadAllUsers() {
+    try {
+        const response = await fetch('/api/admin/users');
+        if (response.ok) {
+            const users = await response.json();
+            renderUsersTable(users);
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки пользователей:', error);
+    }
+}
+
+// Загрузка всех заказов
+async function loadAllOrders() {
+    try {
+        const response = await fetch('/api/orders');
+        if (response.ok) {
+            const orders = await response.json();
+            renderOrdersTable(orders);
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки заказов:', error);
+    }
+}
+
+// Отображение таблицы пользователей
+function renderUsersTable(users) {
+    const container = document.getElementById('users-list');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (users.length === 0) {
+        container.innerHTML = '<p>Нет пользователей</p>';
+        return;
+    }
+    
+    const table = document.createElement('table');
+    table.className = 'admin-table';
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Имя</th>
+                <th>Email</th>
+                <th>Роль</th>
+                <th>Баланс</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${users.map(user => `
+                <tr>
+                    <td>${user.id}</td>
+                    <td>${user.name}</td>
+                    <td>${user.email}</td>
+                    <td>${user.role}</td>
+                    <td>${user.balance} ₽</td>
+                    <td>
+                        <button class="action-btn edit-user" data-id="${user.id}">Изменить</button>
+                        <button class="action-btn delete-user" data-id="${user.id}">Удалить</button>
+                    </td>
+                </tr>
+            `).join('')}
+        </tbody>
+    `;
+    
+    container.appendChild(table);
+}
+
+// Отображение таблицы заказов
+function renderOrdersTable(orders) {
+    const container = document.getElementById('orders-list');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (orders.length === 0) {
+        container.innerHTML = '<p>Нет заказов</p>';
+        return;
+    }
+    
+    const table = document.createElement('table');
+    table.className = 'admin-table';
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>№</th>
+                <th>Покупатель</th>
+                <th>Сумма</th>
+                <th>Статус</th>
+                <th>Дата</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${orders.map(order => `
+                <tr>
+                    <td>${order.order_number}</td>
+                    <td>${order.customer_name}</td>
+                    <td>${order.total} ₽</td>
+                    <td><span class="status-badge ${order.status}">${order.status}</span></td>
+                    <td>${new Date(order.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <button class="action-btn view-order" data-id="${order.id}">Просмотр</button>
+                        <button class="action-btn update-status" data-id="${order.id}">Изменить статус</button>
+                    </td>
+                </tr>
+            `).join('')}
+        </tbody>
+    `;
+    
+    container.appendChild(table);
+}
+
+// Управление товарами
+async function openManageProducts() {
+    if (!currentUser || currentUser.role !== 'admin') {
+        showNotification('Доступ запрещен', 'error');
+        return;
+    }
+    
+    openModal('products-modal');
+    loadProductsForAdmin();
+}
+
+// Загрузка товаров для админ-панели
+async function loadProductsForAdmin() {
+    try {
+        const response = await fetch('/api/products');
+        if (response.ok) {
+            const products = await response.json();
+            renderProductsAdminTable(products);
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки товаров:', error);
+    }
+}
+
+// Отображение таблицы товаров
+function renderProductsAdminTable(products) {
+    const container = document.getElementById('admin-products-list');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (!products || products.length === 0) {
+        container.innerHTML = '<p>Нет товаров</p>';
+        return;
+    }
+    
+    const table = document.createElement('table');
+    table.className = 'admin-table';
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Название</th>
+                <th>Категория</th>
+                <th>Цена</th>
+                <th>Остаток</th>
+                <th>Статус</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${products.map(product => `
+                <tr>
+                    <td>${product.id}</td>
+                    <td>${product.name}</td>
+                    <td>${product.category_name || 'N/A'}</td>
+                    <td>${product.price} ₽</td>
+                    <td>${product.stock}</td>
+                    <td><span class="status-badge ${product.is_active ? 'active' : 'inactive'}">
+                        ${product.is_active ? 'Активен' : 'Неактивен'}
+                    </span></td>
+                    <td>
+                        <button class="action-btn edit-product" data-id="${product.id}">Изменить</button>
+                        <button class="action-btn toggle-product" data-id="${product.id}">
+                            ${product.is_active ? 'Деактивировать' : 'Активировать'}
+                        </button>
+                    </td>
+                </tr>
+            `).join('')}
+        </tbody>
+    `;
+    
+    container.appendChild(table);
+}
+
+// ============ ОБНОВЛЕННЫЙ setupEventListeners ============
+
+function setupEventListeners() {
+    // ... существующие обработчики ...
+    
+    // Новые обработчики для баланса и админа
+    document.getElementById('profile-btn')?.addEventListener('click', showProfile);
+    document.getElementById('history-btn')?.addEventListener('click', showOrderHistory);
+    document.getElementById('logout-btn')?.addEventListener('click', logoutUser);
+    
+    // Кнопка пополнения баланса (добавить в HTML или создать динамически)
+    const topupBtn = document.getElementById('topup-btn');
+    if (topupBtn) {
+        topupBtn.addEventListener('click', openTopupModal);
+    } else {
+        // Создаем кнопку если её нет
+        createTopupButton();
+    }
+    
+    // Админ-кнопки
+    document.getElementById('admin-panel-btn')?.addEventListener('click', openAdminPanel);
+    document.getElementById('manage-products-btn')?.addEventListener('click', openManageProducts);
+    
+    // Форма пополнения баланса
+    const topupForm = document.getElementById('topup-form');
+    if (topupForm) {
+        topupForm.addEventListener('submit', handleTopup);
+    }
+}
+
+// Создание кнопки пополнения баланса
+function createTopupButton() {
+    const userMenu = document.getElementById('user-menu');
+    if (!userMenu) return;
+    
+    const topupBtn = document.createElement('button');
+    topupBtn.id = 'topup-btn';
+    topupBtn.className = 'topup-btn';
+    topupBtn.innerHTML = '<i class="fas fa-coins"></i> Пополнить';
+    
+    // Вставляем перед кнопкой выхода
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        userMenu.insertBefore(topupBtn, logoutBtn);
+        topupBtn.addEventListener('click', openTopupModal);
+    }
+}
+
+// ============ ОБНОВЛЕННЫЙ updateUIForUser ============
+
+function updateUIForUser() {
+    document.getElementById('guest-buttons').style.display = 'none';
+    document.getElementById('user-menu').style.display = 'flex';
+    document.getElementById('user-name').textContent = currentUser.name.split(' ')[0];
+    document.getElementById('user-balance').textContent = `${currentUser.balance || 0} ₽`;
+    
+    // Добавляем кнопку пополнения баланса если её нет
+    if (!document.getElementById('topup-btn')) {
+        createTopupButton();
+    }
+    
+    // Показываем админ-кнопки если пользователь админ
+    if (currentUser.role === 'admin') {
+        document.getElementById('admin-buttons').style.display = 'flex';
+    }
 }
