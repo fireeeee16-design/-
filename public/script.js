@@ -157,23 +157,6 @@ function setupUserEventListeners() {
     if (historyBtn) {
         historyBtn.addEventListener('click', showOrderHistory);
     }
-    
-    // Кнопка пополнения баланса
-    const topupBtn = document.getElementById('topup-btn');
-    if (topupBtn) {
-        topupBtn.addEventListener('click', showTopUpForm);
-    }
-    
-    // Админ-кнопки
-    const adminPanelBtn = document.getElementById('admin-panel-btn');
-    if (adminPanelBtn) {
-        adminPanelBtn.addEventListener('click', showAdminPanel);
-    }
-    
-    const manageProductsBtn = document.getElementById('manage-products-btn');
-    if (manageProductsBtn) {
-        manageProductsBtn.addEventListener('click', showProductManager);
-    }
 }
 
 // Отображение продуктов (остается без изменений)
@@ -706,35 +689,4 @@ function showNotification(message, type = 'info') {
     setTimeout(() => {
         notification.style.display = 'none';
     }, 3000);
-}
-
-// Админ-функции
-async function showAdminPanel() {
-    try {
-        const response = await fetch('/api/admin/stats', {
-            headers: {
-                'Authorization': `Bearer ${authToken}`
-            }
-        });
-        
-        if (response.ok) {
-            const stats = await response.json();
-            openModal('admin-modal');
-            
-            document.getElementById('total-users').textContent = stats.users;
-            document.getElementById('total-orders').textContent = stats.orders;
-            document.getElementById('total-revenue').textContent = `${stats.revenue || 0} ₽`;
-        }
-    } catch (error) {
-        showNotification('Ошибка при загрузке статистики', 'error');
-    }
-}
-
-function showTopUpForm() {
-    openModal('topup-modal');
-}
-
-async function showProductManager() {
-    // Реализация управления товарами
-    openModal('products-modal');
 }
