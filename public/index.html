@@ -23,6 +23,7 @@
                     <li><a href="#about">О нас</a></li>
                     <li><a href="#cart">Корзина <span id="cart-count">0</span></a></li>
                 </ul>
+<!-- В блоке auth-buttons убедитесь что есть такой HTML -->
 <div class="auth-buttons">
     <!-- До входа -->
     <div id="guest-buttons">
@@ -37,7 +38,7 @@
             <span id="user-name"></span>
         </button>
         <span class="user-balance" id="user-balance">0 ₽</span>
-        <!-- Кнопка пополнения будет добавлена скриптом -->
+        <!-- Кнопка пополнения появится автоматически -->
         <button id="logout-btn" class="logout-btn">Выйти</button>
         
         <div id="admin-buttons" style="display: none;">
@@ -269,39 +270,6 @@
         <button class="cta-button" id="edit-profile-btn">Редактировать профиль</button>
     </div>
 </div>
-
-<!-- Модальное окно истории заказов -->
-<div id="history-modal" class="modal">
-    <div class="modal-content">
-        <span class="close-modal">&times;</span>
-        <h2>История заказов</h2>
-        <div id="history-list"></div>
-    </div>
-</div>
-
-<!-- Модальное окно админ-панели -->
-<div id="admin-modal" class="modal">
-    <div class="modal-content">
-        <span class="close-modal">&times;</span>
-        <h2>Админ-панель</h2>
-        <div class="admin-stats">
-            <div class="stat-card">
-                <h3>Пользователи</h3>
-                <p id="total-users">0</p>
-            </div>
-            <div class="stat-card">
-                <h3>Заказы</h3>
-                <p id="total-orders">0</p>
-            </div>
-            <div class="stat-card">
-                <h3>Выручка</h3>
-                <p id="total-revenue">0 ₽</p>
-            </div>
-        </div>
-    </div>
-</div>
-<!-- Добавить перед закрывающим тегом body -->
-
 <!-- Модальное окно пополнения баланса -->
 <div id="topup-modal" class="modal">
     <div class="modal-content">
@@ -348,7 +316,6 @@
             <button class="tab-btn active" data-tab="stats">Статистика</button>
             <button class="tab-btn" data-tab="users">Пользователи</button>
             <button class="tab-btn" data-tab="orders">Заказы</button>
-            <button class="tab-btn" data-tab="transactions">Транзакции</button>
         </div>
         
         <div class="tab-content active" id="stats-tab">
@@ -373,20 +340,16 @@
         </div>
         
         <div class="tab-content" id="users-tab">
+            <h3>Все пользователи</h3>
             <div id="users-list">
-                <!-- Список пользователей -->
+                <!-- Таблица пользователей -->
             </div>
         </div>
         
         <div class="tab-content" id="orders-tab">
+            <h3>Все заказы</h3>
             <div id="orders-list">
-                <!-- Список заказов -->
-            </div>
-        </div>
-        
-        <div class="tab-content" id="transactions-tab">
-            <div id="transactions-list">
-                <!-- Список транзакций -->
+                <!-- Таблица заказов -->
             </div>
         </div>
     </div>
@@ -405,57 +368,6 @@
         </div>
     </div>
 </div>
-
-<!-- Модальное окно редактирования товара -->
-<div id="edit-product-modal" class="modal">
-    <div class="modal-content">
-        <span class="close-modal">&times;</span>
-        <h2 id="edit-product-title">Редактировать товар</h2>
-        
-        <form id="edit-product-form">
-            <input type="hidden" id="product-id">
-            
-            <div class="form-group">
-                <label for="product-name">Название *</label>
-                <input type="text" id="product-name" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="product-category">Категория *</label>
-                <select id="product-category" required>
-                    <option value="">Выберите категорию</option>
-                    <option value="1">Иммунитет</option>
-                    <option value="2">Энергия</option>
-                    <option value="3">Адаптация</option>
-                    <option value="4">Восстановление</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="product-price">Цена (₽) *</label>
-                <input type="number" id="product-price" min="0" step="100" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="product-stock">Остаток на складе</label>
-                <input type="number" id="product-stock" min="0" value="100">
-            </div>
-            
-            <div class="form-group">
-                <label for="product-description">Описание</label>
-                <textarea id="product-description" rows="4"></textarea>
-            </div>
-            
-            <div class="form-group">
-                <label for="product-image">URL изображения</label>
-                <input type="text" id="product-image">
-            </div>
-            
-            <button type="submit" class="submit-btn">Сохранить</button>
-        </form>
-    </div>
-</div>
-
     <script src="script.js"></script>
     
 </body>

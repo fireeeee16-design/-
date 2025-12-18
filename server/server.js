@@ -777,7 +777,23 @@ app.use((err, req, res, next) => {
     message: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 });
+// server.js (добавьте перед обработчиками ошибок)
 
+// API для получения всех пользователей (админ)
+app.get('/api/admin/users', (req, res) => {
+  db.all(
+    `SELECT id, email, name, address, role, balance, created_at 
+     FROM users ORDER BY created_at DESC`,
+    [],
+    (err, rows) => {
+      if (err) {
+        console.error('❌ Ошибка получения пользователей:', err.message);
+        return res.status(500).json({ error: 'Ошибка сервера' });
+      }
+      res.json(rows);
+    }
+  );
+});
 // ==================== ЗАПУСК СЕРВЕРА ====================
 
 app.listen(PORT, () => {

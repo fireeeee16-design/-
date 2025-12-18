@@ -888,9 +888,7 @@ p {
   font-weight: bold;
   color: #667eea;
 }
-/* style.css (добавить в конец) */
-
-/* Кнопка пополнения баланса */
+/* Стили для кнопки пополнения баланса */
 .topup-btn {
     background: linear-gradient(to right, #ffd700, #ffa500);
     color: #333;
@@ -956,6 +954,8 @@ p {
 .wide-modal {
     max-width: 90% !important;
     width: 90% !important;
+    max-height: 80vh;
+    overflow-y: auto;
 }
 
 .admin-tabs {
@@ -990,7 +990,7 @@ p {
 
 .tab-content {
     display: none;
-    max-height: 500px;
+    max-height: 400px;
     overflow-y: auto;
 }
 
