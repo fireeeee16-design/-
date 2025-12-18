@@ -1,0 +1,300 @@
+/* Космическая аптека - базовые стили */
+:root {
+    /* Цветовая палитра */
+    --primary-color: #1a1a2e;
+    --secondary-color: #16213e;
+    --accent-color: #0f3460;
+    --highlight-color: #e94560;
+    --space-blue: #0d1b2a;
+    --nebula-purple: #415a77;
+    --starlight: #f8f9fa;
+    --moon-gray: #e0e1dd;
+    
+    /* Адаптивные переменные */
+    --container-max-width: 1200px;
+    --container-padding-mobile: 1rem;
+    --container-padding-tablet: 1.5rem;
+    --container-padding-desktop: 2rem;
+    
+    --border-radius-sm: 8px;
+    --border-radius-md: 12px;
+    --border-radius-lg: 16px;
+    
+    /* Тени */
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
+    
+    /* Типография */
+    --font-main: 'Roboto', 'Segoe UI', Arial, sans-serif;
+    --font-heading: 'Orbitron', 'Arial Black', sans-serif;
+    
+    /* Размеры шрифтов */
+    --font-size-xs: 0.75rem;    /* 12px */
+    --font-size-sm: 0.875rem;   /* 14px */
+    --font-size-base: 1rem;     /* 16px */
+    --font-size-lg: 1.125rem;   /* 18px */
+    --font-size-xl: 1.25rem;    /* 20px */
+    --font-size-2xl: 1.5rem;    /* 24px */
+    --font-size-3xl: 1.875rem;  /* 30px */
+    --font-size-4xl: 2.25rem;   /* 36px */
+}
+
+/* Базовый сброс */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 100%;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    font-family: var(--font-main);
+    font-size: var(--font-size-base);
+    line-height: 1.6;
+    color: var(--starlight);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--space-blue) 100%);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* Контейнер с адаптивными отступами */
+.container {
+    max-width: var(--container-max-width);
+    margin: 0 auto;
+    padding: 0 var(--container-padding-mobile);
+    width: 100%;
+}
+
+/* Адаптивная сетка */
+.grid {
+    display: grid;
+    gap: 1rem;
+}
+
+/* Адаптивная типография */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 1rem;
+}
+
+h1 { font-size: var(--font-size-3xl); }
+h2 { font-size: var(--font-size-2xl); }
+h3 { font-size: var(--font-size-xl); }
+h4 { font-size: var(--font-size-lg); }
+h5 { font-size: var(--font-size-base); }
+h6 { font-size: var(--font-size-sm); }
+
+p {
+    margin-bottom: 1rem;
+}
+
+/* Ссылки */
+a {
+    color: var(--highlight-color);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: lighten(var(--highlight-color), 10%);
+    text-decoration: underline;
+}
+
+/* Кнопки */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    border: none;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.btn-primary {
+    background: var(--highlight-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: darken(var(--highlight-color), 10%);
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background: var(--accent-color);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: lighten(var(--accent-color), 10%);
+}
+
+/* Карточки */
+.card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-radius: var(--border-radius-md);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Формы */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--moon-gray);
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.875rem;
+    font-size: var(--font-size-base);
+    border: 2px solid var(--nebula-purple);
+    border-radius: var(--border-radius-sm);
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--starlight);
+    transition: border-color 0.3s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--highlight-color);
+}
+
+/* Адаптивные изображения */
+.img-responsive {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Утилитарные классы */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mt-3 { margin-top: 1.5rem; }
+.mt-4 { margin-top: 2rem; }
+
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.mb-3 { margin-bottom: 1.5rem; }
+.mb-4 { margin-bottom: 2rem; }
+
+.d-none { display: none !important; }
+.d-block { display: block !important; }
+.d-flex { display: flex !important; }
+.d-grid { display: grid !important; }
+
+/* Медиа-запросы для адаптивности */
+
+/* Мобильные (до 576px) */
+@media (max-width: 575.98px) {
+    html { font-size: 14px; }
+    
+    .container {
+        padding: 0 var(--container-padding-mobile);
+    }
+    
+    h1 { font-size: var(--font-size-2xl); }
+    h2 { font-size: var(--font-size-xl); }
+    h3 { font-size: var(--font-size-lg); }
+    
+    .btn {
+        padding: 0.625rem 1.25rem;
+        font-size: var(--font-size-sm);
+    }
+    
+    .card {
+        padding: 1rem;
+    }
+}
+
+/* Планшеты (576px - 768px) */
+@media (min-width: 576px) and (max-width: 767.98px) {
+    html { font-size: 15px; }
+    
+    .container {
+        padding: 0 var(--container-padding-tablet);
+    }
+    
+    .grid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+}
+
+/* Ноутбуки (768px - 992px) */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .container {
+        padding: 0 var(--container-padding-tablet);
+    }
+    
+    .grid {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+}
+
+/* Компьютеры (992px и больше) */
+@media (min-width: 992px) {
+    .container {
+        padding: 0 var(--container-padding-desktop);
+    }
+    
+    .grid {
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    }
+}
+
+/* Большие экраны (1200px и больше) */
+@media (min-width: 1200px) {
+    .grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Ландшафтная ориентация */
+@media (orientation: landscape) and (max-height: 500px) {
+    .header-content {
+        padding: 0.5rem 0;
+    }
+    
+    .hero-section {
+        padding: 2rem 0;
+        min-height: auto;
+    }
+}
+
+/* Высокие экраны */
+@media (min-height: 800px) {
+    .hero-section {
+        min-height: 70vh;
+    }
+}

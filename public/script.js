@@ -1014,3 +1014,32 @@ function showNotification(message, type = 'info') {
         notification.style.display = 'none';
     }, 3000);
 }
+// Определение типа устройства
+function detectDevice() {
+    const width = window.innerWidth;
+    
+    if (width < 768) {
+        document.documentElement.classList.add('is-mobile');
+        document.documentElement.classList.remove('is-tablet', 'is-desktop');
+    } else if (width < 992) {
+        document.documentElement.classList.add('is-tablet');
+        document.documentElement.classList.remove('is-mobile', 'is-desktop');
+    } else {
+        document.documentElement.classList.add('is-desktop');
+        document.documentElement.classList.remove('is-mobile', 'is-tablet');
+    }
+}
+
+// Вызов при загрузке и изменении размера окна
+window.addEventListener('load', detectDevice);
+window.addEventListener('resize', detectDevice);
+
+// Исправление высоты 100vh на мобильных
+function setVH() {
+    let vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+}
+
+window.addEventListener('resize', setVH);
+window.addEventListener('orientationchange', setVH);
+setVH();
