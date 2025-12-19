@@ -1012,34 +1012,6 @@ app.get('/api/admin/dashboard', (req, res) => {
         });
     });
 });
-// После успешного оформления заказа добавьте:
-const emailTemplates = require('./emailTemplates');
-
-// Отправляем письмо о заказе
-if (emailTransporter && customer.email) {
-    const orderEmail = emailTemplates.orderConfirmation({
-        order_number: orderNumber,
-        customer_name: customer.name || user.name,
-        items: items.map(item => ({
-            name: item.name,
-            quantity: item.quantity,
-            total_price: item.price * item.quantity
-        })),
-        total: total,
-        status: 'new',
-        address: customer.address || user.address || '',
-        created_at: new Date().toISOString()
-    });
-    
-    await sendEmail(emailTransporter, {
-        from: '"Космическая аптека" <orders@cosmic.pharmacy>',
-        to: customer.email,
-        subject: orderEmail.subject,
-        html: orderEmail.html
-    });
-    
-    console.log('📧 Уведомление о заказе отправлено на:', customer.email);
-}
 // 2. Простой API для получения всех данных таблиц
 app.get('/api/admin/tables', (req, res) => {
     const tables = ['users', 'orders', 'products', 'order_items', 'transactions'];
