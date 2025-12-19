@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: '../.env' });
 const emailTemplates = require('./emailTemplates');
 const { createTransporter, sendEmail } = require('./emailConfig');
 const express = require('express');
