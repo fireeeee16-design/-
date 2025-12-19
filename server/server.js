@@ -1,4 +1,14 @@
-require('dotenv').config({ path: '../.env' });
+// 1. СНАЧАЛА загружаем переменные окружения
+require('dotenv').config();
+
+// 2. ПОТОМ проверяем, что загрузилось
+console.log('=== EMAIL CONFIG CHECK ===');
+console.log('EMAIL_USER:', process.env.EMAIL_USER ? '✅' : '❌ NOT FOUND');
+console.log('EMAIL_PASS:', process.env.EMAIL_PASS ? '✅' : '❌ NOT FOUND');
+console.log('NODE_ENV:', process.env.NODE_ENV || 'development');
+console.log('========================');
+
+// 3. ТОЛЬКО ПОСЛЕ этого импортируем модули, которые используют process.env
 const emailTemplates = require('./emailTemplates');
 const { createTransporter, sendEmail } = require('./emailConfig');
 const express = require('express');

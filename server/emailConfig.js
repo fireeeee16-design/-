@@ -1,3 +1,6 @@
+console.log('[EMAIL-CONFIG] Проверка переменных в emailConfig.js:');
+console.log('[EMAIL-CONFIG] NODE_ENV:', process.env.NODE_ENV);
+console.log('[EMAIL-CONFIG] EMAIL_USER exists:', !!process.env.EMAIL_USER);
 // Конфигурация для отправки email
 const nodemailer = require('nodemailer');
 
