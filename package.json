@@ -1,6 +1,27 @@
 {
+  "name": "cosmic-pharmacy",
+  "version": "1.0.0",
+  "description": "Космическая аптека - интернет-магазин космических лекарств",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "nodemon server/server.js"
+  },
   "dependencies": {
-    "dotenv": "^17.2.3",
-    "nodemailer": "^7.0.11"
-  }
+    "express": "^4.18.2",
+    "sqlite3": "^5.1.6",
+    "cors": "^2.8.5",
+    "body-parser": "^1.20.2",
+    "dotenv": "^16.3.1",
+    "nodemailer": "^6.9.8"
+  },
+  "keywords": [
+    "космос",
+    "аптека",
+    "магазин",
+    "интернет-магазин",
+    "космическая-аптека"
+  ],
+  "author": "Ваше Имя",
+  "license": "MIT"
 }
